@@ -19,6 +19,8 @@
 #include <jni.h>
 #include <android/log.h>
 
+/* see https://stackoverflow.com/questions/17524794/defining-gl-glext-prototypes-vs-getting-function-pointers */
+#define GL_GLEXT_PROTOTYPES
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 
@@ -140,6 +142,64 @@ bool setupGraphics(int w, int h) {
 
     glViewport(0, 0, w, h);
     checkGlError("glViewport");
+
+    /* Let us try the AMD_performance_monitor extension */
+    const int PERF_GROUP_NUM = 128;
+    GLint numGroups = 0;
+    GLsizei groupsSize = PERF_GROUP_NUM;
+    GLuint groups[PERF_GROUP_NUM] = { 0 };
+    glGetPerfMonitorGroupsAMD(&numGroups, groupsSize, groups);
+    int counter = 0;
+    LOGE("AMD_perf_mon: we have monitor group size: %d!\n", numGroups);
+    for (int i = 0; i < numGroups; i++) {
+        //LOGE("AMD_perf_mon: GROUP %d: %d!\n", i, groups[i]); // should be 0 to 15
+        ;
+    }
+
+    // Now try the GetPerfMonitorGroupStringAMD
+
+    const int PERF_CHAR_BUFFER_NUM = 512;
+    GLchar groupString[PERF_CHAR_BUFFER_NUM] = {0};
+    GLsizei bufSize = PERF_CHAR_BUFFER_NUM;
+    GLsizei length = 0;
+    for (int i = 0; i < numGroups; i++) {
+        for (int j = 0; j < bufSize; j++) {
+            groupString[j] = '\0';
+        }
+        glGetPerfMonitorGroupStringAMD((GLuint) i, bufSize, &length, groupString);
+        LOGE("AMD_perf_mon: group #%d, length is %d, string is '%s'!\n", i, length, groupString);
+    }
+
+    // Now try the GetPerfMonitorCountersAMD
+    // Now try the GetPerfMonitorCounterStringAMD
+    const int PERF_COUNTER_NUM = 128;
+    GLint numCounters = 0;
+    GLint maxActiveCounters = 0;
+    GLsizei countersSize = PERF_COUNTER_NUM;
+    GLuint counters[PERF_COUNTER_NUM] = { 0 };
+    GLchar counterString[PERF_CHAR_BUFFER_NUM] = { 0 };
+    for (int i = 0; i < numGroups; i++) {
+        for (int j = 0; j < PERF_COUNTER_NUM; j++) {
+            counters[j] = 0;
+        }
+        glGetPerfMonitorCountersAMD((GLuint) i, &numCounters, &maxActiveCounters,
+                countersSize, counters);
+        LOGE("AMD_perf_mon: group #%d, counter number is %d, max active is %d!\n",
+                i, numCounters, maxActiveCounters);
+        for (int k = 0; k < numCounters; k++) {
+            glGetPerfMonitorCounterStringAMD(
+                    (GLuint) i,
+                    (GLuint) k,
+                    bufSize,
+                    &length,
+                    counterString
+                    );
+            LOGE("AMD_perf_mon: counterStr: %s\n", counterString);
+        }
+
+    }
+
+
     return true;
 }
 
