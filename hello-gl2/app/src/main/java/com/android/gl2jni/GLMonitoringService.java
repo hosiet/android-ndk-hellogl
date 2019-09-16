@@ -31,6 +31,8 @@ public class GLMonitoringService extends Service {
     private int count = 0;
     private static int stateService = NOT_CONNECTED;
 
+    private BackgroundGLThread mBackgroundGLThread = null;
+
     public GLMonitoringService() {
     }
 
@@ -46,6 +48,7 @@ public class GLMonitoringService extends Service {
         super.onCreate();
         mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         stateService = NOT_CONNECTED;
+        this.mBackgroundGLThread = new BackgroundGLThread();
     }
 
     @Override
@@ -58,6 +61,7 @@ public class GLMonitoringService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null) {
             stopForeground(true);
+            stopOpenGLMonitoring();
             stopSelf();
             return START_NOT_STICKY;
         }
@@ -67,23 +71,37 @@ public class GLMonitoringService extends Service {
             case START_ACTION:
                 Log.e(TAG, "Received user start foreground intent");
                 startForeground(NOTIFICATION_ID_FOREGROUND_SERVICE, prepareNotification());
+                initOpenGLMonitoring();
                 connect();
                 break;
             case STOP_ACTION:
                 stopForeground(true);
+                stopOpenGLMonitoring();
                 stopSelf();
                 break;
             default:
                 Log.e(TAG, "default action called!");
                 stopForeground(true);
+                stopOpenGLMonitoring();
                 stopSelf();
         }
         return START_NOT_STICKY;
     }
 
+    private void initOpenGLMonitoring() {
+        this.mBackgroundGLThread.start();
+        return;
+    }
+
+    private void stopOpenGLMonitoring() {
+        this.mBackgroundGLThread.interrupt();
+        return;
+    }
+
     // after notification connection, change notification text
     private void connect() {
         // after 10 sec
+        /*
         new android.os.Handler().postDelayed(
                 new Runnable() {
                     public void run() {
@@ -95,6 +113,8 @@ public class GLMonitoringService extends Service {
                     }
                 }, 10000
         );
+
+         */
     }
 
     private Notification prepareNotification() {
@@ -155,6 +175,27 @@ public class GLMonitoringService extends Service {
         }
 
         return notificationBuilder.build();
+    }
+
+    /**
+     * The class to run OpenGL measurement forever
+     */
+    class BackgroundGLThread extends Thread {
+        @Override
+        public void run() {
+            super.run();
+            Log.e("Thread...", "start running!");
+            while (true) {
+                try {
+                    Thread.sleep(10000);
+                } catch (java.lang.InterruptedException e) {
+                    //e.printStackTrace();
+                    /* no longer execute */
+                    Log.e("Thread...", "thread stopped!!!!!");
+                    break;
+                }
+            }
+        }
     }
 
 }
