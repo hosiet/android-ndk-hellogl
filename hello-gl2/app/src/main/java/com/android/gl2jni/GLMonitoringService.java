@@ -177,25 +177,4 @@ public class GLMonitoringService extends Service {
         return notificationBuilder.build();
     }
 
-    /**
-     * The class to run OpenGL measurement forever
-     */
-    class BackgroundGLThread extends Thread {
-        @Override
-        public void run() {
-            super.run();
-            Log.e("Thread...", "start running!");
-            while (true) {
-                try {
-                    Thread.sleep(10000);
-                } catch (java.lang.InterruptedException e) {
-                    //e.printStackTrace();
-                    /* no longer execute */
-                    Log.e("Thread...", "thread stopped!!!!!");
-                    break;
-                }
-            }
-        }
-    }
-
 }
