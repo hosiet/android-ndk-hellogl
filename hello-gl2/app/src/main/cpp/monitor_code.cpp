@@ -56,20 +56,20 @@ FILE *_gl_output_open_file(char *filepath_p) {
     }
     if (fp == nullptr) {
         /* some error may happen? */
-        LOGE(LOG_TAG, "Error opening file! err: %s", strerror(_my_errno));
+        LOGE("Error opening file! err: %s", strerror(_my_errno));
     } else {
-        LOGI(LOG_TAG, "open_file(): Open log file succeeded!");
+        LOGI("open_file(): Open log file succeeded!");
     }
     return fp;
  }
 
  bool _gl_output_close_file(FILE *fp) {
     if (fp == nullptr) {
-        LOGE(LOG_TAG, "close_file(): Cannot close null file pointer!");
+        LOGE("close_file(): Cannot close null file pointer!");
         return false;
     } else {
         fclose(fp);
-        LOGI(LOG_TAG, "close_file(): file close finished.");
+        LOGI("close_file(): file close finished.");
         return true;
     }
 }
@@ -252,7 +252,7 @@ bool tryGLEnableGlobalMode() {
 
 void doGLTests() {
 
-    int do_test_extention = 1;
+    int do_test_extention = 0;
     bool result;
 
     if (do_test_extention) {
