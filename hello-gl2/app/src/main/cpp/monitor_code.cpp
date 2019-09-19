@@ -27,6 +27,8 @@ const char* LOG_TAG = "libgl2jni_monitor";
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 #define  LOGF(...)  fprintf(fp, __VA_ARGS__)
 
+//#define LOGF(...) LOGE(__VA_ARGS__)
+
 std::string OUTPUT_FILEPATH = "/sdcard/gl_output.txt";
 static FILE * fp = nullptr;
 
@@ -49,6 +51,9 @@ const int PERF_MONITOR_LENGTH = 1;
 const int PERF_COUNTER_LENGTH = 1;
 static GLuint monitor_list[PERF_MONITOR_LENGTH] = { 0 };
 static GLuint counterList[PERF_COUNTER_LENGTH] = {0};
+
+const GLuint monitor_group_id = 0; //10;
+const GLuint monitor_counter_id = 0; // 36;
 
 
 /**
@@ -100,7 +105,6 @@ void monitor_stop() {
     // end the monitor
     glEndPerfMonitorAMD(monitor_list[0]);
 
-    /*
     // get the monitor information
     // TODO FIXME
     const int PERF_OUTPUT_DATA_BUF_SIZE = 128;
@@ -114,7 +118,8 @@ void monitor_stop() {
             &bytesWritten
             );
     LOGF("Data collected, bytesWritten is %d", bytesWritten);
-     */
+    LOGE("Data collected, monitor_list is %d, bytesWritten is %d", monitor_list[0], bytesWritten);
+
 
     // delete the monitor
     glDeletePerfMonitorsAMD((GLsizei) PERF_MONITOR_LENGTH, monitor_list);
@@ -124,7 +129,6 @@ void monitor_stop() {
     glDisable(GL_PERFMON_GLOBAL_MODE_QCOM);
     /* also test whether it is enabled */
 
-    LOGE("TryGlobalMode: before try..");
     bool seeIfEnabled = glIsEnabled(GL_PERFMON_GLOBAL_MODE_QCOM);
     if (seeIfEnabled) {
         LOGE("QCOM_Global_mode: now enabled!");
@@ -332,11 +336,11 @@ void examineGLCapabilities() {
         monitor_list[i] = 0;
     }
     glGenPerfMonitorsAMD((GLsizei) PERF_MONITOR_LENGTH, monitor_list);
-    counterList[0] = 36;
+    counterList[0] = monitor_counter_id;
     glSelectPerfMonitorCountersAMD(
             monitor_list[0],
             (GLboolean) true,
-            (GLuint) 10, // group 0->10, "SP"
+            (GLuint) monitor_group_id, // group 0->10, "SP"
             (GLint) 1,  // No. 0->37, "SP_ACTIVE_CYCLES_ALL"
             counterList
             );
