@@ -97,9 +97,43 @@ void monitor_start() {
 }
 
 void monitor_stop() {
-    shutdownEGL();
+    // end the monitor
+    glEndPerfMonitorAMD(monitor_list[0]);
+
+    /*
+    // get the monitor information
+    // TODO FIXME
+    const int PERF_OUTPUT_DATA_BUF_SIZE = 128;
+    GLuint output_data[PERF_OUTPUT_DATA_BUF_SIZE] = { 0 };
+    GLsizei bytesWritten = 0;
+    glGetPerfMonitorCounterDataAMD(
+            monitor_list[0],
+            GL_PERFMON_RESULT_AMD,
+            (GLsizei) 128, // dataSize
+            output_data,
+            &bytesWritten
+            );
+    LOGF("Data collected, bytesWritten is %d", bytesWritten);
+     */
+
     // delete the monitor
     glDeletePerfMonitorsAMD((GLsizei) PERF_MONITOR_LENGTH, monitor_list);
+
+    // disable global mode
+    LOGE("TryGlobalMode: before disable..");
+    glDisable(GL_PERFMON_GLOBAL_MODE_QCOM);
+    /* also test whether it is enabled */
+
+    LOGE("TryGlobalMode: before try..");
+    bool seeIfEnabled = glIsEnabled(GL_PERFMON_GLOBAL_MODE_QCOM);
+    if (seeIfEnabled) {
+        LOGE("QCOM_Global_mode: now enabled!");
+    } else {
+        LOGE("QCOM_Global_mode: now NOT enabled!");
+    }
+
+    shutdownEGL();
+
     // close output file
     _gl_output_close_file(fp);
 }
@@ -184,12 +218,14 @@ void shutdownEGL() {
  */
 void examineGLCapabilities() {
     /* Let us try the AMD_performance_monitor extension */
+    LOGE("examinGLCap(): very start here");
     const int PERF_GROUP_NUM = 128;
     GLint numGroups = 0;
     GLsizei groupsSize = PERF_GROUP_NUM;
     GLuint groups[PERF_GROUP_NUM] = { 0 };
     glGetPerfMonitorGroupsAMD(&numGroups, groupsSize, groups);
     //int counter = 0;
+    LOGE("examineGLCap: beginning...");
     LOGF("AMD_perf_mon: we have monitor group size: %d!\n", numGroups);
     for (int i = 0; i < numGroups; i++) {
         //LOGE("AMD_perf_mon: GROUP %d: %d!\n", i, groups[i]); // should be 0 to 15
@@ -290,6 +326,7 @@ void examineGLCapabilities() {
         }
     }
 
+    LOGE("examineCap: Before BenPerfMonit...");
     // Now try with GenPerfMonitorsAMD and actually monitor one!
     for (int i = 0; i < PERF_MONITOR_LENGTH; i++) {
         monitor_list[i] = 0;
@@ -304,6 +341,7 @@ void examineGLCapabilities() {
             counterList
             );
     glBeginPerfMonitorAMD(monitor_list[0]);
+    LOGE("examineCap(): Finished ok!");
 }
 
 
@@ -313,18 +351,6 @@ bool tryGLEnableGlobalMode() {
 
     LOGE("TryGlobalMode: before enable..");
     glEnable(GL_PERFMON_GLOBAL_MODE_QCOM);
-    /* also test whether it is enabled */
-
-    LOGE("TryGlobalMode: before try..");
-    seeIfEnabled = glIsEnabled(GL_PERFMON_GLOBAL_MODE_QCOM);
-    if (seeIfEnabled) {
-        LOGE("QCOM_Global_mode: enabled!");
-    } else {
-        LOGE("QCOM_Global_mode: NOT enabled!");
-    }
-
-    LOGE("TryGlobalMode: before disable..");
-    glDisable(GL_PERFMON_GLOBAL_MODE_QCOM);
     /* also test whether it is enabled */
 
     LOGE("TryGlobalMode: before try..");
