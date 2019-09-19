@@ -10,6 +10,7 @@ public class BackgroundGLThread extends Thread {
     public void run() {
         super.run();
         Log.e("Thread...", "start running!");
+        GL2JNILib.initMonitor();
         while (true) {
             try {
                 Thread.sleep(10000);
@@ -17,6 +18,7 @@ public class BackgroundGLThread extends Thread {
                 //e.printStackTrace();
                 /* no longer execute */
                 Log.e("Thread...", "thread stopped!!!!!");
+                GL2JNILib.stopMonitor();
                 break;
             }
         }

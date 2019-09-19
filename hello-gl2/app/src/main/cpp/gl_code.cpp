@@ -123,106 +123,6 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
 GLuint gProgram;
 GLuint gvPositionHandle;
 
-void examineGLCapabilities() {
-    /* Let us try the AMD_performance_monitor extension */
-    const int PERF_GROUP_NUM = 128;
-    GLint numGroups = 0;
-    GLsizei groupsSize = PERF_GROUP_NUM;
-    GLuint groups[PERF_GROUP_NUM] = { 0 };
-    glGetPerfMonitorGroupsAMD(&numGroups, groupsSize, groups);
-    int counter = 0;
-    LOGE("AMD_perf_mon: we have monitor group size: %d!\n", numGroups);
-    for (int i = 0; i < numGroups; i++) {
-        //LOGE("AMD_perf_mon: GROUP %d: %d!\n", i, groups[i]); // should be 0 to 15
-        ;
-    }
-
-    // Now try the GetPerfMonitorGroupStringAMD
-    const int PERF_CHAR_BUFFER_NUM = 512;
-    GLchar groupString[PERF_CHAR_BUFFER_NUM] = {0};
-    GLsizei bufSize = PERF_CHAR_BUFFER_NUM;
-    GLsizei length = 0;
-    for (int i = 0; i < numGroups; i++) {
-        for (int j = 0; j < bufSize; j++) {
-            groupString[j] = '\0';
-        }
-        glGetPerfMonitorGroupStringAMD((GLuint) i, bufSize, &length, groupString);
-        LOGE("AMD_perf_mon: group #%d, length is %d, string is '%s'!\n", i, length, groupString);
-    }
-
-    // Now try the GetPerfMonitorCountersAMD
-    // Now try the GetPerfMonitorCounterStringAMD
-    const int PERF_COUNTER_NUM = 128;
-    GLint numCounters = 0;
-    GLint maxActiveCounters = 0;
-    GLsizei countersSize = PERF_COUNTER_NUM;
-    GLuint counters[PERF_COUNTER_NUM] = { 0 };
-    GLchar counterString[PERF_CHAR_BUFFER_NUM] = { 0 };
-    for (int i = 0; i < numGroups; i++) {
-        for (int j = 0; j < PERF_COUNTER_NUM; j++) {
-            counters[j] = 0;
-        }
-        glGetPerfMonitorCountersAMD((GLuint) i, &numCounters, &maxActiveCounters,
-                                    countersSize, counters);
-        LOGE("AMD_perf_mon: group #%d, counter number is %d, max active is %d!\n",
-             i, numCounters, maxActiveCounters);
-        for (int k = 0; k < numCounters; k++) {
-            glGetPerfMonitorCounterStringAMD(
-                    (GLuint) i,
-                    (GLuint) k,
-                    bufSize,
-                    &length,
-                    counterString
-            );
-            LOGE("AMD_perf_mon: counterStr: %s\n", counterString);
-        }
-    }
-}
-
-bool tryGLEnableGlobalMode() {
-    GLboolean seeIfEnabled;
-
-    LOGE("TryGlobalMode: before enable..");
-    glEnable(GL_PERFMON_GLOBAL_MODE_QCOM);
-    /* also test whether it is enabled */
-
-    LOGE("TryGlobalMode: before try..");
-    seeIfEnabled = glIsEnabled(GL_PERFMON_GLOBAL_MODE_QCOM);
-    if (seeIfEnabled) {
-        LOGE("QCOM_Global_mode: enabled!");
-    } else {
-        LOGE("QCOM_Global_mode: NOT enabled!");
-    }
-
-    LOGE("TryGlobalMode: before disable..");
-    glDisable(GL_PERFMON_GLOBAL_MODE_QCOM);
-    /* also test whether it is enabled */
-
-    LOGE("TryGlobalMode: before try..");
-    seeIfEnabled = glIsEnabled(GL_PERFMON_GLOBAL_MODE_QCOM);
-    if (seeIfEnabled) {
-        LOGE("QCOM_Global_mode: enabled!");
-        return true;
-    } else {
-        LOGE("QCOM_Global_mode: NOT enabled!");
-        return false;
-    }
-}
-
-void doGLTests() {
-
-    int do_test_extention = 1;
-    bool result;
-
-    if (do_test_extention) {
-        //examineGLCapabilities();
-        result = tryGLEnableGlobalMode();
-        LOGE("doGLTests: All done!");
-    }
-}
-
-
-
 bool setupGraphics(int w, int h) {
     printGLString("Version", GL_VERSION);
     printGLString("Vendor", GL_VENDOR);
@@ -243,7 +143,7 @@ bool setupGraphics(int w, int h) {
     glViewport(0, 0, w, h);
     checkGlError("glViewport");
 
-    doGLTests();
+    //doGLTests();
 
     return true;
 }
