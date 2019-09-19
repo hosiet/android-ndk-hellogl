@@ -5,7 +5,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
 
 add_library(gl2jni SHARED
             gl_code.cpp
-            monitor_code.cpp)
+            monitor_code.cpp
+            monitor_khronos.cpp)
 
 # add lib dependencies
 target_link_libraries(gl2jni
