@@ -52,9 +52,17 @@ const int PERF_COUNTER_LENGTH = 1;
 static GLuint monitor_list[PERF_MONITOR_LENGTH] = { 0 };
 static GLuint counterList[PERF_COUNTER_LENGTH] = {0};
 
-const GLuint monitor_group_id = 0; //10;
-const GLuint monitor_counter_id = 0; // 36;
+struct ST_GC {
+    const GLuint group_id = 10;
+    const GLuint counter_id = 36;
+} GCStruct_SP_ACTIVE_CYCLES_ALL;
 
+
+//const GLuint monitor_group_id = GCStruct_SP_ACTIVE_CYCLES_ALL.group_id;
+//const GLuint monitor_counter_id = GCStruct_SP_ACTIVE_CYCLES_ALL.counter_id;
+
+const GLuint monitor_group_id = 10;
+const GLuint monitor_counter_id = 20;
 
 /**
  * Open a file and allow appending later.
@@ -110,10 +118,26 @@ void monitor_stop() {
     const int PERF_OUTPUT_DATA_BUF_SIZE = 128;
     GLuint output_data[PERF_OUTPUT_DATA_BUF_SIZE] = { 0 };
     GLsizei bytesWritten = 0;
+
+    /*
+    // first, get how many data has been collected
+    glGetPerfMonitorCounterDataAMD(
+            monitor_list[0],
+            GL_PERFMON_RESULT_SIZE_AMD,
+            (GLsizei) PERF_OUTPUT_DATA_BUF_SIZE,
+            output_data,
+            &bytesWritten
+            );
+    LOGF("Data collected, the size of bytesWritten is %d\n", bytesWritten);
+    for (int i = 0; i < PERF_OUTPUT_DATA_BUF_SIZE; i++) {
+        output_data[i] = 0;
+    }
+     */
+
     glGetPerfMonitorCounterDataAMD(
             monitor_list[0],
             GL_PERFMON_RESULT_AMD,
-            (GLsizei) 128, // dataSize
+            (GLsizei) PERF_OUTPUT_DATA_BUF_SIZE, // dataSize
             output_data,
             &bytesWritten
             );
@@ -330,6 +354,9 @@ void examineGLCapabilities() {
         }
     }
 
+}
+
+void doGLStartDumpData() {
     LOGE("examineCap: Before BenPerfMonit...");
     // Now try with GenPerfMonitorsAMD and actually monitor one!
     for (int i = 0; i < PERF_MONITOR_LENGTH; i++) {
@@ -341,9 +368,9 @@ void examineGLCapabilities() {
             monitor_list[0],
             (GLboolean) true,
             (GLuint) monitor_group_id, // group 0->10, "SP"
-            (GLint) 1,  // No. 0->37, "SP_ACTIVE_CYCLES_ALL"
+            (GLint) monitor_counter_id,  // No. 0->37, "SP_ACTIVE_CYCLES_ALL"
             counterList
-            );
+    );
     glBeginPerfMonitorAMD(monitor_list[0]);
     LOGE("examineCap(): Finished ok!");
 }
@@ -376,6 +403,7 @@ void doGLTests() {
     if (do_test_extension) {
         result = tryGLEnableGlobalMode();
         examineGLCapabilities();
+        doGLStartDumpData();
         LOGE("doGLTests: All done (started!)!");
     }
 }
