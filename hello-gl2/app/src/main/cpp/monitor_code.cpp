@@ -54,15 +54,13 @@ static GLuint counterList[PERF_COUNTER_LENGTH] = {0};
 
 struct ST_GC {
     const GLuint group_id = 10;
-    const GLuint counter_id = 36;
+    const GLuint counter_id = 35;
 } GCStruct_SP_ACTIVE_CYCLES_ALL;
 
 
-//const GLuint monitor_group_id = GCStruct_SP_ACTIVE_CYCLES_ALL.group_id;
-//const GLuint monitor_counter_id = GCStruct_SP_ACTIVE_CYCLES_ALL.counter_id;
+const GLuint monitor_group_id = GCStruct_SP_ACTIVE_CYCLES_ALL.group_id;
+const GLuint monitor_counter_id = GCStruct_SP_ACTIVE_CYCLES_ALL.counter_id;
 
-const GLuint monitor_group_id = 10;
-const GLuint monitor_counter_id = 20;
 
 /**
  * Open a file and allow appending later.
@@ -112,6 +110,7 @@ void monitor_start() {
 void monitor_stop() {
     // end the monitor
     glEndPerfMonitorAMD(monitor_list[0]);
+    LOGE("EndPerfMonitorAMD issued!");
 
     // get the monitor information
     // TODO FIXME
@@ -119,8 +118,23 @@ void monitor_stop() {
     GLuint output_data[PERF_OUTPUT_DATA_BUF_SIZE] = { 0 };
     GLsizei bytesWritten = 0;
 
-    /*
-    // first, get how many data has been collected
+
+    // first, get if the data is available
+    glGetPerfMonitorCounterDataAMD(
+            monitor_list[0],
+            GL_PERFMON_RESULT_AVAILABLE_AMD,
+            (GLsizei) PERF_OUTPUT_DATA_BUF_SIZE,
+            output_data,
+            &bytesWritten
+    );
+    LOGE("Available or not Data collected, bytesWritten is %d, availability data is %d\n",
+            bytesWritten, ( *(uint8_t* ) output_data) );
+    for (int i = 0; i < PERF_OUTPUT_DATA_BUF_SIZE; i++) {
+        output_data[i] = 0;
+    }
+    bytesWritten = 0;
+
+        // first, get how many data has been collected
     glGetPerfMonitorCounterDataAMD(
             monitor_list[0],
             GL_PERFMON_RESULT_SIZE_AMD,
@@ -128,11 +142,11 @@ void monitor_stop() {
             output_data,
             &bytesWritten
             );
-    LOGF("Data collected, the size of bytesWritten is %d\n", bytesWritten);
+    LOGE("Data collected, the size of bytesWritten is %d\n", bytesWritten);
     for (int i = 0; i < PERF_OUTPUT_DATA_BUF_SIZE; i++) {
         output_data[i] = 0;
     }
-     */
+
 
     glGetPerfMonitorCounterDataAMD(
             monitor_list[0],
@@ -143,6 +157,10 @@ void monitor_stop() {
             );
     LOGF("Data collected, bytesWritten is %d", bytesWritten);
     LOGE("Data collected, monitor_list is %d, bytesWritten is %d", monitor_list[0], bytesWritten);
+    LOGE("The written bytes are: ");
+    for (int i = 0; i < bytesWritten; i++) {
+        LOGE("%d: %04x, ", i, output_data[i]);
+    }
 
 
     // delete the monitor
@@ -366,13 +384,13 @@ void doGLStartDumpData() {
     counterList[0] = monitor_counter_id;
     glSelectPerfMonitorCountersAMD(
             monitor_list[0],
-            (GLboolean) true,
+            GL_TRUE,
             (GLuint) monitor_group_id, // group 0->10, "SP"
             (GLint) monitor_counter_id,  // No. 0->37, "SP_ACTIVE_CYCLES_ALL"
             counterList
     );
     glBeginPerfMonitorAMD(monitor_list[0]);
-    LOGE("examineCap(): Finished ok!");
+    LOGE("examineCap(): glBeginPerfMonitorAMD issued, Finished ok!");
 }
 
 
