@@ -441,7 +441,7 @@ void examineGLCapabilities() {
  */
 void doGLTestAllPerfCounters() {
     const int TEST_ALL_SLEEP_MILLISECONDS = 1000;
-    for (const auto &item : PerfCounterFullList) {
+    for (auto &item : PerfCounterFullList) {
         LOGE("TestAllCounter(): starting, group %d, counter %d!\n",
                 item.group_id, item.counter_id);
 
@@ -519,6 +519,7 @@ void doGLTestAllPerfCounters() {
         LOGF("Data collected, monitor_list is %d, bytesWritten is %d", monitor_list[0], bytesWritten);
         if (bytesWritten > 0) {
             /* This perf monitor have data output. Send such data to the file. */
+            item.has_data = true;
             LOGF("The written bytes are: ");
             for (int i = 0; i < bytesWritten; i++) {
                 LOGF("%d: %04x, ", i, output_data[i]);
@@ -534,16 +535,17 @@ void doGLTestAllPerfCounters() {
     // now, output another data about the availability of data
     LOGF("\n\nRESULT\n");
     for (const auto &item : PerfCounterFullList) {
-        LOGF("testAllCounters(): Group(%d, %s, max_active %d), Counter(%d, %s, %s), data: %d.\n",
+        LOGF("testAllCounters(): Group(%d, %s, max_active %d), Counter(%d, %s, %s), data: %s.\n",
              item.group_id,
              item.group_name.c_str(),
              item.group_maxactive,
              item.counter_id,
              item.counter_name.c_str(),
              item.counter_type.c_str(),
-             (int) item.has_data);
+             item.has_data ? "true" : "false");
     }
     LOGE("TestAllCounter(): Finished!\n");
+    (void) fflush(fp);
 }
 
 void doGLStartDumpData() {
