@@ -145,69 +145,6 @@ void monitor_start() {
 }
 
 void monitor_stop() {
-    // end the monitor
-    /*
-    glEndPerfMonitorAMD(monitor_list[0]);
-    LOGE("EndPerfMonitorAMD issued!");
-
-    // get the monitor information
-    // TODO FIXME
-    const int PERF_OUTPUT_DATA_BUF_SIZE = 128;
-    GLuint output_data[PERF_OUTPUT_DATA_BUF_SIZE] = { 0 };
-    GLsizei bytesWritten = 0;
-
-
-    // first, get if the data is available
-    glGetPerfMonitorCounterDataAMD(
-            monitor_list[0],
-            GL_PERFMON_RESULT_AVAILABLE_AMD,
-            (GLsizei) PERF_OUTPUT_DATA_BUF_SIZE,
-            output_data,
-            &bytesWritten
-    );
-    LOGE("Available or not Data collected, bytesWritten is %d, availability data is %d\n",
-            bytesWritten, ( *(uint8_t* ) output_data) );
-    for (int i = 0; i < PERF_OUTPUT_DATA_BUF_SIZE; i++) {
-        output_data[i] = 0;
-    }
-    bytesWritten = 0;
-
-        // first, get how many data has been collected
-    glGetPerfMonitorCounterDataAMD(
-            monitor_list[0],
-            GL_PERFMON_RESULT_SIZE_AMD,
-            (GLsizei) PERF_OUTPUT_DATA_BUF_SIZE,
-            output_data,
-            &bytesWritten
-            );
-    LOGE("Data collected, the size of bytesWritten is %d\n", bytesWritten);
-    for (int i = 0; i < PERF_OUTPUT_DATA_BUF_SIZE; i++) {
-        output_data[i] = 0;
-    }
-
-
-    glGetPerfMonitorCounterDataAMD(
-            monitor_list[0],
-            GL_PERFMON_RESULT_AMD,
-            (GLsizei) PERF_OUTPUT_DATA_BUF_SIZE, // dataSize
-            output_data,
-            &bytesWritten
-            );
-    LOGF("Data collected, bytesWritten is %d", bytesWritten);
-    LOGE("Data collected, monitor_list is %d, bytesWritten is %d", monitor_list[0], bytesWritten);
-    if (bytesWritten > 0) {
-        // This perf monitor have data output. Send such data to the file.
-
-    }
-    LOGE("The written bytes are: ");
-    for (int i = 0; i < bytesWritten; i++) {
-        LOGE("%d: %04x, ", i, output_data[i]);
-    }
-
-
-    // delete the monitor
-    glDeletePerfMonitorsAMD((GLsizei) PERF_MONITOR_LENGTH, monitor_list);
-    */
 
     // disable global mode
     LOGE("TryGlobalMode: before disable..");
@@ -504,6 +441,10 @@ void doGLTestAllPerfCounters() {
                 &bytesWritten
         );
         LOGF("Data size collected, bytesWritten: %d\n", bytesWritten);
+        // also output the data size real data
+        if (bytesWritten == 4) {
+            LOGF("Data size should be: %" PRIu32 "\n", *((uint32_t *) output_data));
+        }
         for (int i = 0; i < PERF_OUTPUT_DATA_BUF_SIZE; i++) {
             output_data[i] = 0;
         }
