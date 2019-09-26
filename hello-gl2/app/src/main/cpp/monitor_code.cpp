@@ -16,6 +16,7 @@
 
 #include <string>
 #include <cerrno>
+#include <vector>
 
 /* for uint64_t printf support */
 #define __STDC_FORMAT_MACROS
@@ -52,14 +53,57 @@ const int PERF_COUNTER_LENGTH = 1;
 static GLuint monitor_list[PERF_MONITOR_LENGTH] = { 0 };
 static GLuint counterList[PERF_COUNTER_LENGTH] = {0};
 
+class GroupCounterNameTriple {
+public:
+    GLuint group_id = 0;
+    GLuint counter_id = 0;
+    GLuint group_maxactive = 0;
+    std::string group_name;
+    std::string counter_name;
+    std::string counter_type; // convert header magic number to string
+    bool uninitialized = true;
+
+    GroupCounterNameTriple() {
+        uninitialized = true;
+    }
+
+    GroupCounterNameTriple(
+            GLuint group_id_in,
+            GLuint counter_id_in,
+            GLuint group_maxactive_in,
+            std::string &group_name_in,
+            std::string &counter_name_in,
+            std::string &counter_type_in) {
+        group_id = group_id_in;
+        counter_id = counter_id_in;
+        group_name = group_name_in;
+        group_maxactive = group_maxactive_in;
+        counter_name = counter_name_in;
+        counter_type = counter_type_in;
+        uninitialized = false;
+    }
+
+    ~GroupCounterNameTriple() {
+        uninitialized = true;
+    }
+};
+
+static std::vector<GroupCounterNameTriple> PerfCounterFullList;
+
+/* // for static structure
 struct ST_GC {
-    const GLuint group_id = 10;
-    const GLuint counter_id = 35;
+    const GLuint group_id = 1;
+    const GLuint counter_id = 2;
 } GCStruct_SP_ACTIVE_CYCLES_ALL;
 
 
 const GLuint monitor_group_id = GCStruct_SP_ACTIVE_CYCLES_ALL.group_id;
 const GLuint monitor_counter_id = GCStruct_SP_ACTIVE_CYCLES_ALL.counter_id;
+
+*/
+
+GLuint monitor_group_id;
+GLuint monitor_counter_id;
 
 
 /**
@@ -157,6 +201,10 @@ void monitor_stop() {
             );
     LOGF("Data collected, bytesWritten is %d", bytesWritten);
     LOGE("Data collected, monitor_list is %d, bytesWritten is %d", monitor_list[0], bytesWritten);
+    if (bytesWritten > 0) {
+        /* This perf monitor have data output. Send such data to the file. */
+
+    }
     LOGE("The written bytes are: ");
     for (int i = 0; i < bytesWritten; i++) {
         LOGE("%d: %04x, ", i, output_data[i]);
@@ -196,6 +244,119 @@ extern "C" JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_stopMonitor(
     monitor_stop();
 }
 
+
+/**
+ * Get the full list of performance counter, return a list.
+ *
+ * @return the std::vector of certain class about counter info.
+ */
+std::vector<GroupCounterNameTriple> getPerfCounterFullList() {
+    std::vector<GroupCounterNameTriple> newPerfList;
+    const int PERF_GROUP_NUM = 128;
+    GLint numGroups = 0;
+    GLsizei groupsSize = PERF_GROUP_NUM;
+    GLuint groups[PERF_GROUP_NUM] = { 0 };
+    const int PERF_CHAR_BUFFER_NUM = 512;
+    const int PERF_COUNTER_NUM = 128;
+    const int PERF_VOID_DATA_LEN = 64;
+    GLsizei countersSize = PERF_COUNTER_NUM;
+    GLchar groupString[PERF_CHAR_BUFFER_NUM] = {0};
+    GLsizei bufSize = PERF_CHAR_BUFFER_NUM;
+    GLuint counters[PERF_COUNTER_NUM] = { 0 };
+    GLchar counterString[PERF_CHAR_BUFFER_NUM] = { 0 };
+    GLsizei length = 0;
+    GLint numCounters = 0;
+    GLuint maxActiveCounters = 0;
+    GLchar data[PERF_VOID_DATA_LEN] = { 0 };
+    GLvoid *data_p = &data;
+
+    glGetPerfMonitorGroupsAMD(&numGroups, groupsSize, groups);
+    //LOGE("examineGLCap: beginning...");
+    //LOGF("AMD_perf_mon: we have monitor group size: %d!\n", numGroups);
+    for (int i = 0; i < numGroups; i++) {
+        //LOGE("AMD_perf_mon: GROUP %d: %d!\n", i, groups[i]); // should be 0 to 15
+        ;
+
+        for (int j = 0; j < bufSize; j++) {
+            groupString[j] = '\0';
+        }
+        glGetPerfMonitorGroupStringAMD((GLuint) i, bufSize, &length, groupString);
+        //LOGF("AMD_perf_mon: group #%d, length is %d, string is '%s'!\n", i, length, groupString);
+
+
+        for (int j = 0; j < PERF_COUNTER_NUM; j++) {
+            counters[j] = 0;
+        }
+        glGetPerfMonitorCountersAMD((GLuint) i, &numCounters, &maxActiveCounters,
+                                    countersSize, counters);
+        //LOGF("AMD_perf_mon: group #%d, counter number is %d, max active is %d!\n",
+        //     i, numCounters, maxActiveCounters);
+        for (unsigned int k = 0; k < numCounters; k++) {
+            glGetPerfMonitorCounterStringAMD(
+                    (GLuint) i,
+                    (GLuint) k,
+                    bufSize,
+                    &length,
+                    counterString
+            );
+            //LOGF("AMD_perf_mon: counterStr: %s\n", counterString);
+            glGetPerfMonitorCounterInfoAMD(
+                    (GLuint) i,
+                    (GLuint) k,
+                    GL_COUNTER_TYPE_AMD,
+                    data_p
+            );
+            std::string data_type_str;
+            uint32_t data_matcher = * ((uint32_t *) data_p);
+            uint64_t data_range[2] = { 0 };
+            for (int j = 0; j < PERF_VOID_DATA_LEN; j++) {
+                data[j] = '\0';
+            }
+            glGetPerfMonitorCounterInfoAMD(
+                    (GLuint) i,
+                    (GLuint) k,
+                    GL_COUNTER_RANGE_AMD,
+                    data_p
+            );
+            bool do_output_data_range = false;
+            switch (data_matcher) {
+                case GL_UNSIGNED_INT:
+                    data_type_str = "GL_UNSIGNED_INT";
+                    break;
+                case GL_UNSIGNED_INT64_AMD:
+                    data_type_str = "GL_UNSIGNED_INT64_AMD";
+                    data_range[0] = * ((uint64_t *) data_p);
+                    data_range[1] = * (((uint64_t *) data_p) + 1);
+                    do_output_data_range = true;
+                    break;
+                case GL_PERCENTAGE_AMD:
+                    data_type_str = "GL_PERCENTAGE_AMD";
+                    break;
+                case GL_FLOAT:
+                    data_type_str = "GL_FLOAT";
+                    break;
+                default:
+                    data_type_str = "ERROR_OTHER_TYPE";
+                    break;
+            }
+
+            /* YES! We add the counter info to the array here. */
+            std::string groupString_l = std::string(groupString);
+            std::string counterString_l = std::string(counterString);
+            GroupCounterNameTriple newTriple(
+                    groups[i], k, maxActiveCounters, groupString_l, counterString_l, data_type_str);
+            newPerfList.push_back(newTriple);
+
+            //LOGF("AMD_perf_mon: the counter type is %s.\n", data_type_str.c_str());
+            if (do_output_data_range) {
+                //LOGF("AMD_perf_mon: the counter range: No1: %" PRIu64 ", No2: %" PRIu64 "\n\n",
+                //     data_range[0], data_range[1]);
+            }
+            // 281474976710655 is actually 2^48 - 1
+        }
+    }
+    return newPerfList;
+}
 
 
 void setupEGL(int w, int h) {
@@ -264,114 +425,19 @@ void shutdownEGL() {
  */
 void examineGLCapabilities() {
     /* Let us try the AMD_performance_monitor extension */
-    LOGE("examinGLCap(): very start here");
-    const int PERF_GROUP_NUM = 128;
-    GLint numGroups = 0;
-    GLsizei groupsSize = PERF_GROUP_NUM;
-    GLuint groups[PERF_GROUP_NUM] = { 0 };
-    glGetPerfMonitorGroupsAMD(&numGroups, groupsSize, groups);
-    //int counter = 0;
-    LOGE("examineGLCap: beginning...");
-    LOGF("AMD_perf_mon: we have monitor group size: %d!\n", numGroups);
-    for (int i = 0; i < numGroups; i++) {
-        //LOGE("AMD_perf_mon: GROUP %d: %d!\n", i, groups[i]); // should be 0 to 15
-        ;
+    LOGE("examineGLCap(): very start here");
+
+    /* We have encapsulated the GroupCounterNameTriple, use that! */
+    for (const auto &item : PerfCounterFullList) {
+        LOGF("examineGLCap(): Group(%d, %s, max_active %d), Counter(%d, %s, %s).\n",
+                item.group_id,
+                item.group_name.c_str(),
+                item.group_maxactive,
+                item.counter_id,
+                item.counter_name.c_str(),
+                item.counter_type.c_str());
     }
-
-    // Now try the GetPerfMonitorGroupStringAMD
-    const int PERF_CHAR_BUFFER_NUM = 512;
-    GLchar groupString[PERF_CHAR_BUFFER_NUM] = {0};
-    GLsizei bufSize = PERF_CHAR_BUFFER_NUM;
-    GLsizei length = 0;
-    for (int i = 0; i < numGroups; i++) {
-        for (int j = 0; j < bufSize; j++) {
-            groupString[j] = '\0';
-        }
-        glGetPerfMonitorGroupStringAMD((GLuint) i, bufSize, &length, groupString);
-        LOGF("AMD_perf_mon: group #%d, length is %d, string is '%s'!\n", i, length, groupString);
-    }
-
-    // Now try the GetPerfMonitorCountersAMD
-    // Now try the GetPerfMonitorCounterStringAMD
-    // Now try the GetPerfMonitorCounterInfoAMD
-    /* The document for info is not really clear so most of the code is
-     * based on guessing.
-     * */
-    const int PERF_COUNTER_NUM = 128;
-    const int PERF_VOID_DATA_LEN = 64;
-    GLint numCounters = 0;
-    GLint maxActiveCounters = 0;
-    GLsizei countersSize = PERF_COUNTER_NUM;
-    GLuint counters[PERF_COUNTER_NUM] = { 0 };
-    GLchar counterString[PERF_CHAR_BUFFER_NUM] = { 0 };
-    GLchar data[PERF_VOID_DATA_LEN] = { 0 };
-    GLvoid *data_p = &data;
-    for (int i = 0; i < numGroups; i++) {
-        for (int j = 0; j < PERF_COUNTER_NUM; j++) {
-            counters[j] = 0;
-        }
-        glGetPerfMonitorCountersAMD((GLuint) i, &numCounters, &maxActiveCounters,
-                                    countersSize, counters);
-        LOGF("AMD_perf_mon: group #%d, counter number is %d, max active is %d!\n",
-             i, numCounters, maxActiveCounters);
-        for (int k = 0; k < numCounters; k++) {
-            glGetPerfMonitorCounterStringAMD(
-                    (GLuint) i,
-                    (GLuint) k,
-                    bufSize,
-                    &length,
-                    counterString
-            );
-            LOGF("AMD_perf_mon: counterStr: %s\n", counterString);
-            glGetPerfMonitorCounterInfoAMD(
-                    (GLuint) i,
-                    (GLuint) k,
-                    GL_COUNTER_TYPE_AMD,
-                    data_p
-                    );
-            std::string data_type_str;
-            uint32_t data_matcher = * ((uint32_t *) data_p);
-            uint64_t data_range[2] = { 0 };
-            for (int j = 0; j < PERF_VOID_DATA_LEN; j++) {
-                data[j] = '\0';
-            }
-            glGetPerfMonitorCounterInfoAMD(
-                    (GLuint) i,
-                    (GLuint) k,
-                    GL_COUNTER_RANGE_AMD,
-                    data_p
-            );
-            bool do_output_data_range = false;
-            switch (data_matcher) {
-                case GL_UNSIGNED_INT:
-                    data_type_str = "GL_UNSIGNED_INT";
-                    break;
-                case GL_UNSIGNED_INT64_AMD:
-                    data_type_str = "GL_UNSIGNED_INT64_AMD";
-                    data_range[0] = * ((uint64_t *) data_p);
-                    data_range[1] = * (((uint64_t *) data_p) + 1);
-                    do_output_data_range = true;
-                    break;
-                case GL_PERCENTAGE_AMD:
-                    data_type_str = "GL_PERCENTAGE_AMD";
-                    break;
-                case GL_FLOAT:
-                    data_type_str = "GL_FLOAT";
-                    break;
-                default:
-                    data_type_str = "ERROR_OTHER_TYPE";
-                    break;
-            }
-            LOGF("AMD_perf_mon: the counter type is %s.\n", data_type_str.c_str());
-            if (do_output_data_range) {
-                LOGF("AMD_perf_mon: the counter range: No1: %" PRIu64 ", No2: %" PRIu64 "\n\n",
-                        data_range[0], data_range[1]);
-            }
-            // 281474976710655 is actually 2^48 - 1
-
-        }
-    }
-
+    LOGE("examineGLCap(): finished");
 }
 
 void doGLStartDumpData() {
