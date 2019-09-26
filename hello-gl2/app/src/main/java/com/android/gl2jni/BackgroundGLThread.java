@@ -11,6 +11,8 @@ public class BackgroundGLThread extends Thread {
         super.run();
         Log.e("Thread...", "start running!");
         GL2JNILib.initMonitor();
+        Log.e("Thread...", "starting dump all data");
+        GL2JNILib.startMonitor();
         while (true) {
             try {
                 Thread.sleep(10000);

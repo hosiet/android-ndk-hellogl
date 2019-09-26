@@ -17,6 +17,8 @@
 #include <string>
 #include <cerrno>
 #include <vector>
+#include <thread>
+#include <chrono>
 
 /* for uint64_t printf support */
 #define __STDC_FORMAT_MACROS
@@ -44,6 +46,7 @@ static EGLDisplay eglDisp;
 void setupEGL(int w, int h);
 void shutdownEGL();
 void doGLTests();
+void doGLTestAllPerfCounters();
 
 
 /* Real implementations */
@@ -62,6 +65,7 @@ public:
     std::string counter_name;
     std::string counter_type; // convert header magic number to string
     bool uninitialized = true;
+    bool has_data = false;
 
     GroupCounterNameTriple() {
         uninitialized = true;
@@ -89,18 +93,6 @@ public:
 };
 
 static std::vector<GroupCounterNameTriple> PerfCounterFullList;
-
-/* // for static structure
-struct ST_GC {
-    const GLuint group_id = 1;
-    const GLuint counter_id = 2;
-} GCStruct_SP_ACTIVE_CYCLES_ALL;
-
-
-const GLuint monitor_group_id = GCStruct_SP_ACTIVE_CYCLES_ALL.group_id;
-const GLuint monitor_counter_id = GCStruct_SP_ACTIVE_CYCLES_ALL.counter_id;
-
-*/
 
 GLuint monitor_group_id;
 GLuint monitor_counter_id;
@@ -149,10 +141,12 @@ void monitor_init() {
 }
 
 void monitor_start() {
+    doGLTestAllPerfCounters();
 }
 
 void monitor_stop() {
     // end the monitor
+    /*
     glEndPerfMonitorAMD(monitor_list[0]);
     LOGE("EndPerfMonitorAMD issued!");
 
@@ -202,7 +196,7 @@ void monitor_stop() {
     LOGF("Data collected, bytesWritten is %d", bytesWritten);
     LOGE("Data collected, monitor_list is %d, bytesWritten is %d", monitor_list[0], bytesWritten);
     if (bytesWritten > 0) {
-        /* This perf monitor have data output. Send such data to the file. */
+        // This perf monitor have data output. Send such data to the file.
 
     }
     LOGE("The written bytes are: ");
@@ -213,6 +207,7 @@ void monitor_stop() {
 
     // delete the monitor
     glDeletePerfMonitorsAMD((GLsizei) PERF_MONITOR_LENGTH, monitor_list);
+    */
 
     // disable global mode
     LOGE("TryGlobalMode: before disable..");
@@ -266,7 +261,7 @@ std::vector<GroupCounterNameTriple> getPerfCounterFullList() {
     GLchar counterString[PERF_CHAR_BUFFER_NUM] = { 0 };
     GLsizei length = 0;
     GLint numCounters = 0;
-    GLuint maxActiveCounters = 0;
+    GLint maxActiveCounters = 0;
     GLchar data[PERF_VOID_DATA_LEN] = { 0 };
     GLvoid *data_p = &data;
 
@@ -344,7 +339,7 @@ std::vector<GroupCounterNameTriple> getPerfCounterFullList() {
             std::string groupString_l = std::string(groupString);
             std::string counterString_l = std::string(counterString);
             GroupCounterNameTriple newTriple(
-                    groups[i], k, maxActiveCounters, groupString_l, counterString_l, data_type_str);
+                    groups[i], k, (GLuint) maxActiveCounters, groupString_l, counterString_l, data_type_str);
             newPerfList.push_back(newTriple);
 
             //LOGF("AMD_perf_mon: the counter type is %s.\n", data_type_str.c_str());
@@ -440,6 +435,117 @@ void examineGLCapabilities() {
     LOGE("examineGLCap(): finished");
 }
 
+
+/**
+ * Used only for testing all perf counters.
+ */
+void doGLTestAllPerfCounters() {
+    const int TEST_ALL_SLEEP_MILLISECONDS = 1000;
+    for (const auto &item : PerfCounterFullList) {
+        LOGE("TestAllCounter(): starting, group %d, counter %d!\n",
+                item.group_id, item.counter_id);
+
+        /* Finish the full cycle about Monitoring dump data here */
+        for (int i = 0; i < PERF_MONITOR_LENGTH; i++) {
+            monitor_list[i] = 0;
+        }
+        for (int i = 0; i < PERF_COUNTER_LENGTH; i++) {
+            counterList[i] = 0;
+        }
+        glGenPerfMonitorsAMD(
+                (GLsizei) PERF_MONITOR_LENGTH,
+                monitor_list
+                );
+        glSelectPerfMonitorCountersAMD(
+                monitor_list[0],
+                GL_TRUE,
+                (GLuint) item.group_id,
+                (GLint) item.counter_id,
+                counterList
+                );
+        glBeginPerfMonitorAMD(monitor_list[0]);
+
+        // sleep now
+        std::this_thread::sleep_for(std::chrono::milliseconds(TEST_ALL_SLEEP_MILLISECONDS));
+
+        // end measurement here
+        glEndPerfMonitorAMD(monitor_list[0]);
+
+        // get the monitor information
+        // TODO FIXME
+        const int PERF_OUTPUT_DATA_BUF_SIZE = 128;
+        GLuint output_data[PERF_OUTPUT_DATA_BUF_SIZE] = { 0 };
+        GLsizei bytesWritten = 0;
+
+        // first, get if the data is available
+        glGetPerfMonitorCounterDataAMD(
+                monitor_list[0],
+                GL_PERFMON_RESULT_AVAILABLE_AMD,
+                (GLsizei) PERF_OUTPUT_DATA_BUF_SIZE,
+                output_data,
+                &bytesWritten
+        );
+        LOGF("COUNTER: (%d, %d) -- (%s, %s)\n",
+                item.group_id, item.counter_id, item.group_name.c_str(),
+                item.counter_name.c_str());
+        LOGF("Available or not Data collected, bytesWritten: %d, availability: %d\n",
+             bytesWritten, ( *(uint8_t* ) output_data) );
+        for (int i = 0; i < PERF_OUTPUT_DATA_BUF_SIZE; i++) {
+            output_data[i] = 0;
+        }
+        bytesWritten = 0;
+
+        // first, get how many data has been collected
+        glGetPerfMonitorCounterDataAMD(
+                monitor_list[0],
+                GL_PERFMON_RESULT_SIZE_AMD,
+                (GLsizei) PERF_OUTPUT_DATA_BUF_SIZE,
+                output_data,
+                &bytesWritten
+        );
+        LOGF("Data size collected, bytesWritten: %d\n", bytesWritten);
+        for (int i = 0; i < PERF_OUTPUT_DATA_BUF_SIZE; i++) {
+            output_data[i] = 0;
+        }
+
+        glGetPerfMonitorCounterDataAMD(
+                monitor_list[0],
+                GL_PERFMON_RESULT_AMD,
+                (GLsizei) PERF_OUTPUT_DATA_BUF_SIZE, // dataSize
+                output_data,
+                &bytesWritten
+        );
+        //LOGF("Data collected, bytesWritten is %d", bytesWritten);
+        LOGF("Data collected, monitor_list is %d, bytesWritten is %d", monitor_list[0], bytesWritten);
+        if (bytesWritten > 0) {
+            /* This perf monitor have data output. Send such data to the file. */
+            LOGF("The written bytes are: ");
+            for (int i = 0; i < bytesWritten; i++) {
+                LOGF("%d: %04x, ", i, output_data[i]);
+            }
+
+        }
+        LOGF("\n\n");
+
+        // delete the monitor
+        glDeletePerfMonitorsAMD((GLsizei) PERF_MONITOR_LENGTH, monitor_list);
+    }
+
+    // now, output another data about the availability of data
+    LOGF("\n\nRESULT\n");
+    for (const auto &item : PerfCounterFullList) {
+        LOGF("testAllCounters(): Group(%d, %s, max_active %d), Counter(%d, %s, %s), data: %d.\n",
+             item.group_id,
+             item.group_name.c_str(),
+             item.group_maxactive,
+             item.counter_id,
+             item.counter_name.c_str(),
+             item.counter_type.c_str(),
+             (int) item.has_data);
+    }
+    LOGE("TestAllCounter(): Finished!\n");
+}
+
 void doGLStartDumpData() {
     LOGE("examineCap: Before BenPerfMonit...");
     // Now try with GenPerfMonitorsAMD and actually monitor one!
@@ -486,8 +592,9 @@ void doGLTests() {
 
     if (do_test_extension) {
         result = tryGLEnableGlobalMode();
+        PerfCounterFullList = getPerfCounterFullList();
         examineGLCapabilities();
-        doGLStartDumpData();
+        //doGLStartDumpData();
         LOGE("doGLTests: All done (started!)!");
     }
 }
