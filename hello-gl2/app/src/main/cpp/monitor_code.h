@@ -8,6 +8,7 @@
 void monitor_init();
 void monitor_start();
 void monitor_stop();
+void monitor_trigger();
 
 
 #endif //HELLO_GL2_MONITOR_CODE_H

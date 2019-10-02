@@ -33,4 +33,5 @@ public class GL2JNILib {
      public static native void initMonitor();
      public static native void startMonitor();
      public static native void stopMonitor();
+    public static native void triggerMonitor();
 }

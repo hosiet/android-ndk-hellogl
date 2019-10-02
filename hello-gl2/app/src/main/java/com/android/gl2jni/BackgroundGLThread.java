@@ -9,20 +9,31 @@ public class BackgroundGLThread extends Thread {
     @Override
     public void run() {
         super.run();
-        Log.e("Thread...", "start running!");
+        Log.e("BG_Thread (java)", "start running!");
         GL2JNILib.initMonitor();
-        Log.e("Thread...", "starting dump all data");
+        Log.e("BG_Thread (java)", "starting dump all data");
         GL2JNILib.startMonitor();
+        int counter = 0;
         while (true) {
             try {
-                Thread.sleep(10000);
+                Log.e("BG_Thread (java)", "counter: " + counter);
+                Thread.sleep(1000);
+                /* Instead of sleeping, try with running the GL code
+                   to collect the data
+                 */
+                GL2JNILib.triggerMonitor();
+                counter += 1;
             } catch (java.lang.InterruptedException e) {
                 //e.printStackTrace();
                 /* no longer execute */
-                Log.e("Thread...", "thread stopped!!!!!");
-                GL2JNILib.stopMonitor();
+                Log.e("BG_Thread (java)", "Break due to exception!");
+                break;
+            }
+            if (counter >= 60) {
                 break;
             }
         }
+        Log.e("BG_Thread (java)", "Finishing, calling stopMonitor()...");
+        GL2JNILib.stopMonitor();
     }
 }
