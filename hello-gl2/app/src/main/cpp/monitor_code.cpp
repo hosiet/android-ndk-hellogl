@@ -62,8 +62,8 @@ static GLuint counterList[PERF_COUNTER_LENGTH] = {0};
 // lets try with (oneplus7pro, 10, 22) PERF_SP_WAVE_IDLE_CYCLES)
 // (oneplus7pro, 10, 7, NON_EXECUTION_CYCLES)
 // Try with (oneplus7pro, 4, 4), PERF_HLSQ_UCHE_LATENCY_CYCLES
-GLuint monitor_group_id = 10;
-GLuint monitor_counter_id = 6;
+GLuint monitor_group_id = 11;
+GLuint monitor_counter_id = 22;
 
 class GroupCounterNameTriple {
 public:
