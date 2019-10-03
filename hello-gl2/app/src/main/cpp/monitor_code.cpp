@@ -525,9 +525,13 @@ static void doGLStartMonitorForMeasurement(GLuint group_id, GLuint counter_id) {
 
 /**
  * Used only for testing all perf counters.
+ *
+ * Currently the code will run background for 60s/120s without
+ * switching back to the Java environment. Seems that this
+ * no-reentry could solve the issue.
  */
 void doGLTestAllPerfCounters() {
-    const unsigned int TEST_TOTAL_MEASURE_SEC = 120;
+    const unsigned int TEST_TOTAL_MEASURE_SEC = 60;
     const unsigned int TEST_ALL_SLEEP_MILLISECONDS = 500;
     auto test_measure_times = \
             (unsigned int) ((TEST_TOTAL_MEASURE_SEC * 1000) / TEST_ALL_SLEEP_MILLISECONDS);
@@ -539,7 +543,6 @@ void doGLTestAllPerfCounters() {
         while ((err = glGetError()) != GL_NO_ERROR) {
             LOGE("We got an OpenGL Error! The value is: %04x!", err);
         }
-        LOGE("Checkpoint -1");
         //LOGE("TestAllCounter(): starting, group %d, counter %d!\n",
                 ///item.group_id, item.counter_id);
                 //monitor_group_id, monitor_counter_id);
@@ -560,7 +563,6 @@ void doGLTestAllPerfCounters() {
         while ((err = glGetError()) != GL_NO_ERROR) {
             LOGE("We got an OpenGL Error! The value is: %04x!", err);
         }
-        LOGE("Checkpoint 0.5");
 
         glSelectPerfMonitorCountersAMD(
                 monitor_list[0],
@@ -574,7 +576,6 @@ void doGLTestAllPerfCounters() {
         while ((err = glGetError()) != GL_NO_ERROR) {
             LOGE("We got an OpenGL Error! The value is: %04x!", err);
         }
-        LOGE("Checkpoint 0.8");
 
         glBeginPerfMonitorAMD(monitor_list[0]);
         while ((err = glGetError()) != GL_NO_ERROR) {
@@ -648,7 +649,6 @@ void doGLTestAllPerfCounters() {
                 output_data,
                 &bytesWritten
         );
-        LOGE("Checkpoint 3");
 
         //LOGF("Data collected, bytesWritten is %d", bytesWritten);
         //LOGE("Data collected, monitor_list is %d, bytesWritten is %d", monitor_list[0], bytesWritten);
@@ -659,7 +659,7 @@ void doGLTestAllPerfCounters() {
             // we should use this way to output!
             //item.has_data = true;
 
-            LOGE("== Data collected, No.%d", i);
+            LOGE("==!!!== Data collected, No.%d", i);
             LOGF("The written bytes:");
             for (int j = 0; j < bytesWritten; j++) {
                 LOGF("%d: %04x, ", j, output_data[j]);
