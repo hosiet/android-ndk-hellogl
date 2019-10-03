@@ -640,6 +640,10 @@ void doGLTestAllPerfCounters() {
         );
         LOGE("Data size collected, bytesWritten: %d\n", bytesWritten);
         // also output the data size real data
+        if (bytesWritten == 4) {
+            uint64_t real_size = *((uint64_t *) output_data);
+            LOGE("Data size is: %" PRIu64 "!", real_size);
+        }
         bytesWritten = 0;
 
         glGetPerfMonitorCounterDataAMD(
@@ -660,11 +664,11 @@ void doGLTestAllPerfCounters() {
             //item.has_data = true;
 
             LOGE("==!!!== Data collected, bytesWritten is %d", bytesWritten);
-            LOGE("==!!!== Data collected, No.%d", i);
+            LOGF("==!!!== Data collected, No.%d", i);
 
             LOGE("The written bytes:");
             for (int j = 0; j < bytesWritten; j++) {
-                LOGE("%d: %04x, ", j, output_data[j]);
+                LOGF("%d: %04x, ", j, output_data[j]);
                 if (output_data[j] != 0) {
                     max_nonzero = j;
                 }
@@ -757,4 +761,24 @@ void doGLTests() {
         //doGLStartDumpData();
         LOGE("doGLTests: All done (started!)!");
     }
+}
+
+std::string myGLGetCounterNameStringFromID(GLuint group, GLuint counter) {
+    for (auto &i : PerfCounterFullList) {
+        if (i.group_id == group && i.counter_id == counter) {
+            return i.counter_name;
+        }
+    }
+    // by default return not found
+    return std::string("ERR_NOT_FOUND");
+}
+
+std::tuple<GLuint, GLuint> myGLGetCounterIDFromName(std::string const &counterName) {
+    for (auto &i : PerfCounterFullList) {
+        if (i.counter_name == counterName) {
+            return std::make_tuple(i.group_id, i.counter_id);
+        }
+    }
+    // by default return not found
+    return std::make_tuple(999, 999);
 }
