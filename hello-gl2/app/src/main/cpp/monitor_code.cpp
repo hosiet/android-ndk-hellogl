@@ -535,7 +535,7 @@ static void doGLStartMonitorForMeasurement(GLuint group_id, GLuint counter_id) {
  */
 void doGLTestAllPerfCounters() {
     const unsigned int TEST_TOTAL_MEASURE_SEC = 60;
-    const unsigned int TEST_ALL_SLEEP_MILLISECONDS = 1000;
+    const unsigned int TEST_ALL_SLEEP_MILLISECONDS = 200;
     auto test_measure_times = \
             (unsigned int) ((TEST_TOTAL_MEASURE_SEC * 1000) / TEST_ALL_SLEEP_MILLISECONDS);
     const int PERF_OUTPUT_DATA_BUF_SIZE = 10240;
@@ -664,15 +664,19 @@ void doGLTestAllPerfCounters() {
             //item.has_data = true;
 
             LOGE("==!!!== Data collected, bytesWritten is %d", bytesWritten);
-            LOGF("==!!!== Data collected, No.%d", i);
+            LOGF("==!!!== Data collected, No.%d\n", i);
 
-            LOGE("The written bytes:");
+            LOGE("The written bytes:\n");
+            // we assume it is of uint64_t
+            LOGF("DATA: %d %" PRIu64 "\n", i, *((uint64_t *) (output_data + 2)));
+            /* // This is not the correct way
             for (int j = 0; j < bytesWritten; j++) {
-                LOGF("%d: %04x, ", j, output_data[j]);
+                LOGF("%d: %04x, \n", j, output_data[j]);
                 if (output_data[j] != 0) {
                     max_nonzero = j;
                 }
             }
+             */
 
             // now, we only document about how many data was retrieved.
             //LOGF("count: %d, bytes: %d, max_nonzero: %d\n", i, bytesWritten, max_nonzero);
