@@ -552,6 +552,8 @@ void doGLTestAllPerfCounters() {
     for (int j = 0; j < PERF_COUNTER_LENGTH; j++) {
         counterList[j] = 0;
     }
+    // !! real fix for the issue
+    counterList[0] = monitor_counter_id;
 
     glGenPerfMonitorsAMD(
             (GLsizei) PERF_MONITOR_LENGTH,
@@ -564,7 +566,7 @@ void doGLTestAllPerfCounters() {
             monitor_list[0],
             GL_TRUE,
             monitor_group_id,
-            monitor_counter_id,
+            1, //PERF_COUNTER_LENGTH,      // which is actually 1
             counterList
     );
     while ((err = glGetError()) != GL_NO_ERROR) {
