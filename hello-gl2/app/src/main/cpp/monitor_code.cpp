@@ -35,6 +35,16 @@ const char* LOG_TAG = "libgl2jni_monitor";
 std::string OUTPUT_FILEPATH = "/sdcard/gl_output.txt";
 static FILE * fp = nullptr;
 
+/* List of counter names that we want to retrieve data from */
+static const char* TARGET_PERF_COUNTER_NAME_LIST[] = {
+        "PERF_SP_WAVE_IDLE_CYCLES",
+        "PERF_SP_WAVE_CTRL_CYCLES",
+        "PERF_SP_WAVE_EMIT_CYCLES",
+        "PERF_SP_WAVE_NOP_CYCLES",
+        "PERF_SP_WAVE_WAIT_CYCLES",
+        "PERF_SP_WAVE_FETCH_CYCLES"
+};
+
 // OpenGL ES 2.0 code
 
 static EGLConfig eglConf;
@@ -62,6 +72,8 @@ static GLuint counterList[PERF_COUNTER_LENGTH] = {0};
 // lets try with (oneplus7pro, 10, 22) PERF_SP_WAVE_IDLE_CYCLES)
 // (oneplus7pro, 10, 7, NON_EXECUTION_CYCLES)
 // Try with (oneplus7pro, 4, 4), PERF_HLSQ_UCHE_LATENCY_CYCLES
+// working on (pixel2, 11, 22), PERF_SP_WAVE_IDLE_CYCLES
+
 GLuint monitor_group_id = 11;
 GLuint monitor_counter_id = 22;
 
@@ -621,8 +633,8 @@ void doGLTestAllPerfCounters() {
         //LOGF("COUNTER: (%d, %d) -- (%s, %s)\n",
         //       item.group_id, item.counter_id, item.group_name.c_str(),
         //        item.counter_name.c_str());
-        LOGE("Available or not Data collected, bytesWritten: %d, availability: --\n",
-             bytesWritten);
+        //LOGE("Available or not Data collected, bytesWritten: %d, availability: --\n",
+        //     bytesWritten);
         bytesWritten = 0;
 
         // first, get how many data has been collected
@@ -666,7 +678,7 @@ void doGLTestAllPerfCounters() {
             LOGE("==!!!== Data collected, bytesWritten is %d", bytesWritten);
             LOGF("==!!!== Data collected, No.%d\n", i);
 
-            LOGE("The written bytes:\n");
+            //LOGE("The written bytes:\n");
             // we assume it is of uint64_t
             LOGF("DATA: %d %" PRIu64 "\n", i, *((uint64_t *) (output_data + 2)));
             /* // This is not the correct way
