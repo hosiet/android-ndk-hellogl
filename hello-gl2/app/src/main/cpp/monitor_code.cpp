@@ -19,6 +19,8 @@
 #include <vector>
 #include <thread>
 #include <chrono>
+#include <algorithm>
+#include <tuple>
 
 /* for uint64_t printf support */
 #define __STDC_FORMAT_MACROS
@@ -37,10 +39,10 @@ static FILE * fp = nullptr;
 
 /* List of counter names that we want to retrieve data from */
 static const char* TARGET_PERF_COUNTER_NAME_LIST[] = {
+        "PERF_SP_BUSY_CYCLES",
         "PERF_SP_WAVE_IDLE_CYCLES",
-        "PERF_SP_WAVE_CTRL_CYCLES",
         "PERF_SP_WAVE_EMIT_CYCLES",
-        "PERF_SP_WAVE_NOP_CYCLES",
+        "PERF_SP_LM_LOAD_INSTRUCTIONS",
         "PERF_SP_WAVE_WAIT_CYCLES",
         "PERF_SP_WAVE_FETCH_CYCLES"
 };
@@ -58,24 +60,27 @@ void setupEGL(int w, int h);
 void shutdownEGL();
 void doGLTests();
 void doGLTestAllPerfCounters();
-static void doTriggerMonitorDuringMeasurement();
-static void doGLStartMonitorForMeasurement(GLuint, GLuint);
+//static void doTriggerMonitorDuringMeasurement();
+//static void doGLStartMonitorForMeasurement(GLuint, GLuint);
+std::tuple<GLuint, GLuint> myGLGetCounterIDFromName(std::string const &);
 
 
 /* Real implementations */
 
+const bool ENABLE_GLOBAL_MODE = false;
+
 const int PERF_MONITOR_LENGTH = 1;
-const int PERF_COUNTER_LENGTH = 1;
+const int PERF_COUNTER_LENGTH = sizeof(TARGET_PERF_COUNTER_NAME_LIST) / sizeof(char *);
 static GLuint monitor_list[PERF_MONITOR_LENGTH] = { 0 };
-static GLuint counterList[PERF_COUNTER_LENGTH] = {0};
+static GLuint counterList[PERF_COUNTER_LENGTH] = { 0 };
 
 // lets try with (oneplus7pro, 10, 22) PERF_SP_WAVE_IDLE_CYCLES)
 // (oneplus7pro, 10, 7, NON_EXECUTION_CYCLES)
 // Try with (oneplus7pro, 4, 4), PERF_HLSQ_UCHE_LATENCY_CYCLES
 // working on (pixel2, 11, 22), PERF_SP_WAVE_IDLE_CYCLES
 
-GLuint monitor_group_id = 11;
-GLuint monitor_counter_id = 22;
+//GLuint monitor_group_id = 11;
+//GLuint monitor_counter_id = 22;
 
 class GroupCounterNameTriple {
 public:
@@ -406,6 +411,7 @@ void examineGLCapabilities() {
  * Trigger monitor to actually collect and have the data written
  * into the output file.
  */
+ /*
 static void doTriggerMonitorDuringMeasurement() {
     glEndPerfMonitorAMD(monitor_list[0]);
     while ((err = glGetError()) != GL_NO_ERROR) {
@@ -428,7 +434,7 @@ static void doTriggerMonitorDuringMeasurement() {
     for (int i = 0; i < PERF_OUTPUT_SIZE_DATA_BUF_SIZE; i++) {
         output_size_data[i] = 0;
     }
-    /*
+
     glGetPerfMonitorCounterDataAMD(
             monitor_list[0],
             GL_PERFMON_RESULT_AVAILABLE_AMD,
@@ -460,7 +466,7 @@ static void doTriggerMonitorDuringMeasurement() {
         output_size_data[i] = 0;
     }
 
-    */
+
     bytesWritten = 0;
     glGetPerfMonitorCounterDataAMD(
             monitor_list[0],
@@ -476,7 +482,7 @@ static void doTriggerMonitorDuringMeasurement() {
     //LOGF("Data collected, bytesWritten is %d", bytesWritten);
     LOGE("Data collected, monitor_list is %d, bytesWritten is %d", monitor_list[0], bytesWritten);
     if (bytesWritten > 0) {
-        /* This perf monitor have data output. Send such data to the file. */
+        // This perf monitor have data output. Send such data to the file.
         // FIXME: most data is (GLuint groupid, GLuint counterid, uint64_t data),
         // we should use this way to output!
         LOGE("The written bytes are: ");
@@ -496,7 +502,10 @@ static void doTriggerMonitorDuringMeasurement() {
     );
     glBeginPerfMonitorAMD(monitor_list[0]);
 }
+  */
 
+
+ /*
 static void doGLStartMonitorForMeasurement(GLuint group_id, GLuint counter_id) {
     GLuint my_group_id = group_id;
     GLuint my_counter_id = counter_id;
@@ -533,7 +542,7 @@ static void doGLStartMonitorForMeasurement(GLuint group_id, GLuint counter_id) {
         LOGE("We got an OpenGL Error! The value is: %04x!", err);
     }
 }
-
+*/
 
 /**
  * Used only for testing all perf counters.
@@ -546,8 +555,10 @@ static void doGLStartMonitorForMeasurement(GLuint group_id, GLuint counter_id) {
  * in the future, the buffer must be large enough?
  */
 void doGLTestAllPerfCounters() {
+    // TODO FIXME
+    const GLuint monitor_group_id = 11; // for pixel 2
     const unsigned int TEST_TOTAL_MEASURE_SEC = 60;
-    const unsigned int TEST_ALL_SLEEP_MILLISECONDS = 200;
+    const unsigned int TEST_ALL_SLEEP_MILLISECONDS = 500;
     auto test_measure_times = \
             (unsigned int) ((TEST_TOTAL_MEASURE_SEC * 1000) / TEST_ALL_SLEEP_MILLISECONDS);
     const int PERF_OUTPUT_DATA_BUF_SIZE = 10240;
@@ -560,12 +571,19 @@ void doGLTestAllPerfCounters() {
     for (int j = 0; j < PERF_MONITOR_LENGTH; j++) {
         monitor_list[j] = 0;
     }
+    LOGE("checkpoint 0, PERF_COUNTER_LENGTH is %d", PERF_COUNTER_LENGTH);
 
     for (int j = 0; j < PERF_COUNTER_LENGTH; j++) {
-        counterList[j] = 0;
+        LOGE("checkpoint 1");
+        const std::string my_name = std::string(TARGET_PERF_COUNTER_NAME_LIST[j]);
+        LOGE("checkpoint 2");
+        std::tuple<GLuint, GLuint> my_tuple = myGLGetCounterIDFromName(my_name);
+        LOGE("checkpoint 3");
+        GLuint my_uint = std::get<1>(my_tuple);
+        LOGE("checkpoint 4");
+        counterList[j] = my_uint;
     }
-    // !! real fix for the issue
-    counterList[0] = monitor_counter_id;
+    LOGE("checkpoint 1");
 
     glGenPerfMonitorsAMD(
             (GLsizei) PERF_MONITOR_LENGTH,
@@ -578,12 +596,13 @@ void doGLTestAllPerfCounters() {
             monitor_list[0],
             GL_TRUE,
             monitor_group_id,
-            1, //PERF_COUNTER_LENGTH,      // which is actually 1
+            PERF_COUNTER_LENGTH, //PERF_COUNTER_LENGTH,
             counterList
     );
     while ((err = glGetError()) != GL_NO_ERROR) {
         LOGE("We got an OpenGL Error! The value is: %04x!", err);
     }
+    LOGE("checkpoint 2s");
     // Finish the full cycle about Monitoring dump data here
     for (int i = 0; i < test_measure_times; i++) {
     //for (auto &item : PerfCounterFullList) {
@@ -680,7 +699,17 @@ void doGLTestAllPerfCounters() {
 
             //LOGE("The written bytes:\n");
             // we assume it is of uint64_t
-            LOGF("DATA: %d %" PRIu64 "\n", i, *((uint64_t *) (output_data + 2)));
+            int k = 0;
+            while (k < bytesWritten) {
+                LOGF("Data: counter: %d, group: %d, counter: %d, data: %" PRIu64 "\n",
+                     i,
+                     *((uint32_t *) (output_data + k)),
+                     *((uint32_t *) (output_data + k + 1)),
+                     *((uint64_t *) (output_data + k + 2))
+                     );
+                k += 4;
+            }
+
             /* // This is not the correct way
             for (int j = 0; j < bytesWritten; j++) {
                 LOGF("%d: %04x, \n", j, output_data[j]);
@@ -771,7 +800,9 @@ void doGLTests() {
     bool result;
 
     if (do_test_extension) {
-        result = tryGLEnableGlobalMode();
+        if (ENABLE_GLOBAL_MODE) {
+            result = tryGLEnableGlobalMode();
+        }
         PerfCounterFullList = getPerfCounterFullList();
         examineGLCapabilities();
         //doGLStartDumpData();
