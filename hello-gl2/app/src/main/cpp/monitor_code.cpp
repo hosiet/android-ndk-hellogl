@@ -27,24 +27,35 @@
 #include <cinttypes>
 
 
+#define NO_LOG_FILE
+
+
 const char* LOG_TAG = "libgl2jni_monitor";
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
-#define  LOGF(...)  fprintf(fp, __VA_ARGS__)
 
-//#define LOGF(...) LOGE(__VA_ARGS__)
+
+
+#if defined(NO_LOG_FILE)
+#define LOGF(...)  __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+#else
+#define  LOGF(...)  fprintf(fp, __VA_ARGS__)
+#endif
+
 
 std::string OUTPUT_FILEPATH = "/sdcard/gl_output.txt";
 static FILE * fp = nullptr;
 
 /* List of counter names that we want to retrieve data from */
 static const char* TARGET_PERF_COUNTER_NAME_LIST[] = {
-        "PERF_SP_BUSY_CYCLES",
-        "PERF_SP_WAVE_IDLE_CYCLES",
-        "PERF_SP_WAVE_EMIT_CYCLES",
-        "PERF_SP_LM_LOAD_INSTRUCTIONS",
-        "PERF_SP_WAVE_WAIT_CYCLES",
-        "PERF_SP_WAVE_FETCH_CYCLES"
+        "PERF_CP_ALWAYS_COUNT",
+        "PERF_CP_BUSY_GFX_CORE_IDLE",
+        "PERF_CP_BUSY_CYCLES",
+        "PERF_CP_PFP_IDLE",
+        "PERF_CP_PFP_BUSY_WORKING",
+        "PERF_CP_PFP_STALL_CYCLES_ANY",
+        "PERF_CP_PFP_STARVE_CYCLES_ANY",
+        "PERF_CP_PFP_ICACHE_MISS"
 };
 
 // OpenGL ES 2.0 code
@@ -556,8 +567,8 @@ static void doGLStartMonitorForMeasurement(GLuint group_id, GLuint counter_id) {
  */
 void doGLTestAllPerfCounters() {
     // TODO FIXME
-    const GLuint monitor_group_id = 11; // for pixel 2
-    const unsigned int TEST_TOTAL_MEASURE_SEC = 60;
+    const GLuint monitor_group_id = 0; // for pixel 2
+    const unsigned int TEST_TOTAL_MEASURE_SEC = 5;
     const unsigned int TEST_ALL_SLEEP_MILLISECONDS = 500;
     auto test_measure_times = \
             (unsigned int) ((TEST_TOTAL_MEASURE_SEC * 1000) / TEST_ALL_SLEEP_MILLISECONDS);
