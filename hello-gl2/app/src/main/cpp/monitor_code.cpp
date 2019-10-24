@@ -47,15 +47,17 @@ std::string OUTPUT_FILEPATH = "/sdcard/gl_output.txt";
 static FILE * fp = nullptr;
 
 /* List of counter names that we want to retrieve data from */
+// CP, max active is 8
 static const char* TARGET_PERF_COUNTER_NAME_LIST[] = {
         "PERF_CP_ALWAYS_COUNT",
         "PERF_CP_BUSY_GFX_CORE_IDLE",
         "PERF_CP_BUSY_CYCLES",
         "PERF_CP_PFP_IDLE",
-        "PERF_CP_PFP_BUSY_WORKING",
-        "PERF_CP_PFP_STALL_CYCLES_ANY",
-        "PERF_CP_PFP_STARVE_CYCLES_ANY",
-        "PERF_CP_PFP_ICACHE_MISS"
+        "PERF_CP_ME_BUSY_WORKING",
+        "PERF_CP_ME_STARVE_CYCLES_ANY",
+//        "PERF_CP_ME_FIFO_EMPTY_PFP_IDLE",
+        "PERF_CP_ME_ICACHE_MISS",
+        "PERF_CP_ME_ICACHE_HIT"
 };
 
 // OpenGL ES 2.0 code
@@ -80,7 +82,7 @@ std::string myGLGetCounterNameStringFromID(GLuint, GLuint);
 
 /* Real implementations */
 
-const bool ENABLE_GLOBAL_MODE = true;
+const bool ENABLE_GLOBAL_MODE = false;
 
 const int PERF_MONITOR_LENGTH = 1;
 const int PERF_COUNTER_LENGTH = sizeof(TARGET_PERF_COUNTER_NAME_LIST) / sizeof(char *);
@@ -177,8 +179,8 @@ void monitor_init() {
 }
 
 void monitor_start() {
-    //doGLTestAllPerfCounters();                     //  normal data collection
-    doGLTestAllPerfCounterWithDataOrNot();           //  test whether with data or not
+    doGLTestAllPerfCounters();                     //  normal data collection
+    //doGLTestAllPerfCounterWithDataOrNot();           //  transverse; test whether with data or not
     //doGLStartMonitorForMeasurement(monitor_group_id, monitor_counter_id);
 }
 
@@ -690,9 +692,9 @@ void doGLTestAllPerfCounterWithDataOrNot() {
  */
 void doGLTestAllPerfCounters() {
     // TODO FIXME
-    const GLuint monitor_group_id = 0; // for pixel 2
-    const unsigned int TEST_TOTAL_MEASURE_SEC = 5;
-    const unsigned int TEST_ALL_SLEEP_MILLISECONDS = 500;
+    const GLuint monitor_group_id = 0; // for pixel 2, 0: CP
+    const unsigned int TEST_TOTAL_MEASURE_SEC = 20;
+    const unsigned int TEST_ALL_SLEEP_MILLISECONDS = 50;
     auto test_measure_times = \
             (unsigned int) ((TEST_TOTAL_MEASURE_SEC * 1000) / TEST_ALL_SLEEP_MILLISECONDS);
     const int PERF_OUTPUT_DATA_BUF_SIZE = 10240;
