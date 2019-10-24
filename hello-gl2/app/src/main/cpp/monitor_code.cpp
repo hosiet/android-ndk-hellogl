@@ -73,7 +73,7 @@ static GLenum err;
 
 const bool ENABLE_GLOBAL_MODE = false;
 
-const int PERF_MONITOR_LENGTH = 1;
+const int PERF_MONITOR_LENGTH = 6;
 const int PERF_COUNTER_LENGTH = sizeof(TARGET_PERF_COUNTER_NAME_LIST) / sizeof(char *);
 static GLuint monitor_list[PERF_MONITOR_LENGTH] = { 0 };
 static GLuint counterList[PERF_COUNTER_LENGTH] = { 0 };
@@ -646,7 +646,15 @@ void doGLTestAllPerfCounterWithDataOrNot() {
  */
 void doGLTestAllPerfCounters() {
     // TODO FIXME
-    const GLuint monitor_group_id = 0; // for pixel 2, 0: CP
+    //const GLuint monitor_group_id = 0; // for pixel 2, 0: CP
+
+    const GLuint GROUP_CP = 0;
+    const GLuint GROUP_RBBM = 1;
+    const GLuint GROUP_RAS = 7;
+    const GLuint GROUP_SP = 11;
+    const GLuint GROUP_AXI = 17;
+    const GLuint GROUP_VBIF = 18;
+
     const unsigned int TEST_TOTAL_MEASURE_SEC = 20;
     const unsigned int TEST_ALL_SLEEP_MILLISECONDS = 50;
     auto test_measure_times = \
@@ -682,10 +690,14 @@ void doGLTestAllPerfCounters() {
     while ((err = glGetError()) != GL_NO_ERROR) {
         LOGE("We got an OpenGL Error! The value is: %04x!", err);
     }
+    // Now, try to enable certain monitor counters.
+    // For Pixel 2, try the following:
+    // groups: 0, 1, 7, 11, 17, 18
+
     glSelectPerfMonitorCountersAMD(
             monitor_list[0],
             GL_TRUE,
-            monitor_group_id,
+            GROUP_CP,
             PERF_COUNTER_LENGTH, //PERF_COUNTER_LENGTH,
             counterList
     );
