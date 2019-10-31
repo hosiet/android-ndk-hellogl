@@ -46,19 +46,7 @@ const char* LOG_TAG = "libgl2jni_monitor";
 std::string OUTPUT_FILEPATH = "/sdcard/gl_output.txt";
 static FILE * fp = nullptr;
 
-/* List of counter names that we want to retrieve data from */
-// CP, max active is 8
-static const char* TARGET_PERF_COUNTER_NAME_LIST[] = {
-        "PERF_CP_ALWAYS_COUNT",
-        "PERF_CP_BUSY_GFX_CORE_IDLE",
-        "PERF_CP_BUSY_CYCLES",
-        "PERF_CP_PFP_IDLE",
-        "PERF_CP_ME_BUSY_WORKING",
-        "PERF_CP_ME_STARVE_CYCLES_ANY",
-//        "PERF_CP_ME_FIFO_EMPTY_PFP_IDLE",
-        "PERF_CP_ME_ICACHE_MISS",
-        "PERF_CP_ME_ICACHE_HIT"
-};
+
 
 // OpenGL ES 2.0 code
 
@@ -72,6 +60,8 @@ static GLenum err;
 /* Real implementations */
 
 const bool ENABLE_GLOBAL_MODE = false;
+
+
 
 const int PERF_MONITOR_LENGTH = 6;
 const int PERF_COUNTER_LENGTH = sizeof(TARGET_PERF_COUNTER_NAME_LIST) / sizeof(char *);
@@ -648,13 +638,6 @@ void doGLTestAllPerfCounters() {
     // TODO FIXME
     //const GLuint monitor_group_id = 0; // for pixel 2, 0: CP
 
-    const GLuint GROUP_CP = 0;
-    const GLuint GROUP_RBBM = 1;
-    const GLuint GROUP_RAS = 7;
-    const GLuint GROUP_SP = 11;
-    const GLuint GROUP_AXI = 17;
-    const GLuint GROUP_VBIF = 18;
-
     const unsigned int TEST_TOTAL_MEASURE_SEC = 20;
     const unsigned int TEST_ALL_SLEEP_MILLISECONDS = 50;
     auto test_measure_times = \
@@ -667,21 +650,22 @@ void doGLTestAllPerfCounters() {
     LOGE("doGLTestAllPerfCounters: Function is now starting...");
 
     for (int j = 0; j < PERF_MONITOR_LENGTH; j++) {
-        monitor_list[j] = 0;
+        monitor_list[j] = GROUP_ID_LIST[j];
     }
+
     LOGE("checkpoint 0, PERF_COUNTER_LENGTH is %d", PERF_COUNTER_LENGTH);
 
     for (int j = 0; j < PERF_COUNTER_LENGTH; j++) {
-        LOGE("checkpoint 1");
+        //LOGE("checkpoint 1");
         const std::string my_name = std::string(TARGET_PERF_COUNTER_NAME_LIST[j]);
-        LOGE("checkpoint 2");
+        //LOGE("checkpoint 2");
         std::tuple<GLuint, GLuint> my_tuple = myGLGetCounterIDFromName(my_name);
-        LOGE("checkpoint 3");
+        //LOGE("checkpoint 3");
         GLuint my_uint = std::get<1>(my_tuple);
-        LOGE("checkpoint 4");
+        //LOGE("checkpoint 4");
         counterList[j] = my_uint;
     }
-    LOGE("checkpoint 1");
+    //LOGE("checkpoint 1");
 
     glGenPerfMonitorsAMD(
             (GLsizei) PERF_MONITOR_LENGTH,
@@ -690,6 +674,9 @@ void doGLTestAllPerfCounters() {
     while ((err = glGetError()) != GL_NO_ERROR) {
         LOGE("We got an OpenGL Error! The value is: %04x!", err);
     }
+
+
+    {
     // Now, try to enable certain monitor counters.
     // For Pixel 2, try the following:
     // groups: 0, 1, 7, 11, 17, 18
@@ -704,7 +691,11 @@ void doGLTestAllPerfCounters() {
     while ((err = glGetError()) != GL_NO_ERROR) {
         LOGE("We got an OpenGL Error! The value is: %04x!", err);
     }
-    LOGE("checkpoint 2s");
+    }
+
+
+
+    //LOGE("checkpoint 2s");
     // Finish the full cycle about Monitoring dump data here
     for (int i = 0; i < test_measure_times; i++) {
     //for (auto &item : PerfCounterFullList) {

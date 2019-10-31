@@ -60,4 +60,53 @@ std::tuple<GLuint, GLuint> myGLGetCounterIDFromName(std::string const &);
 void doGLTestAllPerfCounterWithDataOrNot();
 std::string myGLGetCounterNameStringFromID(GLuint, GLuint);
 
+
+static std::string[][] monitor_counter_list = {
+    {
+        "PERF_CP_ALWAYS_COUNT",
+        "PERF_CP_BUSY_GFX_CORE_IDLE",
+        "PERF_CP_BUSY_CYCLES",
+        "PERF_CP_PFP_IDLE",
+        "PERF_CP_ME_BUSY_WORKING",
+        "PERF_CP_ME_STARVE_CYCLES_ANY",
+        "PERF_CP_ME_ICACHE_MISS",
+        "PERF_CP_ME_ICACHE_HIT"
+    },
+    {
+        "PERF_RBBM_ALWAYS_ON",
+        "PERF_RBBM_STATUS_MASKED"
+    },
+    {
+        "PERF_RAS_STARVE_CYCLES_TSE"
+    },
+    {
+        "PERF_SP_WAVE_IDLE_CYCLES"
+    },
+    {
+        "AXI_READ_REQUESTS_ID_0",
+        "AXI_WRITE_REQUESTS_ID_0"
+    },
+    {
+        "VBIF_CORE_STARVE_CYCLES_POWER"
+    }
+};
+
+
+const GLuint GROUP_CP = 0;
+const GLuint GROUP_RBBM = 1;
+const GLuint GROUP_RAS = 7;
+const GLuint GROUP_SP = 11;
+const GLuint GROUP_AXI = 17;
+const GLuint GROUP_VBIF = 18;
+
+const GLuint GROUP_ID_LIST[] {
+    GROUP_CP,
+    GROUP_RBBM,
+    GROUP_RAS,
+    GROUP_SP,
+    GROUP_AXI,
+    GROUP_VBIF
+};
+
+
 #endif //HELLO_GL2_MONITOR_CODE_H
