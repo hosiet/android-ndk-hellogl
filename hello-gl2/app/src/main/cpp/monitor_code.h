@@ -98,7 +98,7 @@ const GLuint GROUP_CP = 0;
 const GLuint GROUP_RBBM = 1;
 const GLuint GROUP_RAS = 7;
 const GLuint GROUP_SP = 11;
-const GLuint GROUP_AXI = 17;
+//const GLuint GROUP_AXI = 17;
 const GLuint GROUP_VBIF = 18;
 
 const GLuint GROUP_ID_LIST[] {
@@ -106,7 +106,7 @@ const GLuint GROUP_ID_LIST[] {
     GROUP_RBBM,
     GROUP_RAS,
     GROUP_SP,
-    GROUP_AXI,
+    //GROUP_AXI,
     GROUP_VBIF
 };
 

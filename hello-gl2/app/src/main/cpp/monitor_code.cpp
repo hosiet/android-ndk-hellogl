@@ -63,7 +63,7 @@ const bool ENABLE_GLOBAL_MODE = false;
 
 
 
-const int PERF_MONITOR_LENGTH = 6;
+const int PERF_MONITOR_LENGTH = 5;
 //const int PERF_COUNTER_LENGTH = sizeof(TARGET_PERF_COUNTER_NAME_LIST) / sizeof(char *);
 static GLuint monitor_list[PERF_MONITOR_LENGTH] = { 0 };
 static GLuint counterList[66] = { 0 };
@@ -96,9 +96,11 @@ static GLuint counter_list_id_3_11_sp[] = {
     22
 };
 
+/*
 static GLuint counter_list_id_4_17_axi[] = {
-    0, 21
+    0
 };
+*/
 
 static GLuint counter_list_id_5_18_vbif[] = {
     2
@@ -671,7 +673,7 @@ void doGLTestAllPerfCounters() {
     //const GLuint monitor_group_id = 0; // for pixel 2, 0: CP
 
     const unsigned int TEST_TOTAL_MEASURE_SEC = 20;
-    const unsigned int TEST_ALL_SLEEP_MILLISECONDS = 50;
+    const unsigned int TEST_ALL_SLEEP_MILLISECONDS = 1000;
     auto test_measure_times = \
             (unsigned int) ((TEST_TOTAL_MEASURE_SEC * 1000) / TEST_ALL_SLEEP_MILLISECONDS);
     const int PERF_OUTPUT_DATA_BUF_SIZE = 10240;
@@ -692,7 +694,7 @@ void doGLTestAllPerfCounters() {
             monitor_list
     );
     while ((err = glGetError()) != GL_NO_ERROR) {
-        LOGE("We got an OpenGL Error! The value is: %04x!", err);
+        LOGE("glGenPerfMonitor: We got an OpenGL Error! The value is: %04x!", err);
     }
 
 
@@ -705,7 +707,7 @@ void doGLTestAllPerfCounters() {
                 monitor_list[0],
                 GL_TRUE, 0, 8, counter_list_id_0_0_cp);
         while ((err = glGetError()) != GL_NO_ERROR) {
-            LOGE("We got an OpenGL Error! The value is: %04x!", err);
+            LOGE("glSelect0: We got an OpenGL Error! The value is: %04x!", err);
         }
 
         // group 1
@@ -713,7 +715,7 @@ void doGLTestAllPerfCounters() {
                 monitor_list[1],
                 GL_TRUE, 1, 3, counter_list_id_1_1_rbbm);
         while ((err = glGetError()) != GL_NO_ERROR) {
-            LOGE("We got an OpenGL Error! The value is: %04x!", err);
+            LOGE("glSelect1: We got an OpenGL Error! The value is: %04x!", err);
         }
 
         // group 2
@@ -721,7 +723,7 @@ void doGLTestAllPerfCounters() {
                 monitor_list[2],
                 GL_TRUE, 2, 1, counter_list_id_2_7_ras);
         while ((err = glGetError()) != GL_NO_ERROR) {
-            LOGE("We got an OpenGL Error! The value is: %04x!", err);
+            LOGE("glSelect2: We got an OpenGL Error! The value is: %04x!", err);
         }
 
         // group 3
@@ -729,23 +731,15 @@ void doGLTestAllPerfCounters() {
                 monitor_list[3],
                 GL_TRUE, 3, 1, counter_list_id_3_11_sp);
         while ((err = glGetError()) != GL_NO_ERROR) {
-            LOGE("We got an OpenGL Error! The value is: %04x!", err);
+            LOGE("glSelect3: We got an OpenGL Error! The value is: %04x!", err);
         }
 
         // group 4
         glSelectPerfMonitorCountersAMD(
                 monitor_list[4],
-                GL_TRUE, 4, 2, counter_list_id_4_17_axi);
+                GL_TRUE, 4, 1, counter_list_id_5_18_vbif);
         while ((err = glGetError()) != GL_NO_ERROR) {
-            LOGE("We got an OpenGL Error! The value is: %04x!", err);
-        }
-
-        // group 5
-        glSelectPerfMonitorCountersAMD(
-                monitor_list[5],
-                GL_TRUE, 5, 1, counter_list_id_5_18_vbif);
-        while ((err = glGetError()) != GL_NO_ERROR) {
-            LOGE("We got an OpenGL Error! The value is: %04x!", err);
+            LOGE("glSelect5: We got an OpenGL Error! The value is: %04x!", err);
         }
     }
 
@@ -762,7 +756,7 @@ void doGLTestAllPerfCounters() {
                 ///item.group_id, item.counter_id);
                 //monitor_group_id, monitor_counter_id);
 
-        for (int j = 0; j < 6; j++) {
+        for (int j = 0; j < PERF_MONITOR_LENGTH; j++) {
             glBeginPerfMonitorAMD(monitor_list[j]);
         }
         while ((err = glGetError()) != GL_NO_ERROR) {
@@ -773,11 +767,11 @@ void doGLTestAllPerfCounters() {
         std::this_thread::sleep_for(std::chrono::milliseconds(TEST_ALL_SLEEP_MILLISECONDS));
 
         // end measurement here
-        for (int j = 0; j < 6; j++) {
+        for (int j = 0; j < PERF_MONITOR_LENGTH; j++) {
             glEndPerfMonitorAMD(monitor_list[j]);
-        }
-        while ((err = glGetError()) != GL_NO_ERROR) {
-            LOGE("3,We got an OpenGL Error! The value is: %04x!", err);
+            while ((err = glGetError()) != GL_NO_ERROR) {
+                LOGE("3.2, %d: We got an OpenGL Error! The value is: %04x!", j, err);
+            }
         }
 
         // get the monitor information
@@ -790,7 +784,7 @@ void doGLTestAllPerfCounters() {
         */
 
         // Handle all data in a cycle
-        for (int j = 0; j < 6; j++) {
+        for (int j = 0; j < PERF_MONITOR_LENGTH; j++) {
             bytesWritten = 0;
             glGetPerfMonitorCounterDataAMD(
                     monitor_list[j],
