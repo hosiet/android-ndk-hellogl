@@ -61,6 +61,7 @@ void doGLTestAllPerfCounterWithDataOrNot();
 std::string myGLGetCounterNameStringFromID(GLuint, GLuint);
 
 
+/*
 static std::string[][] monitor_counter_list = {
     {
         "PERF_CP_ALWAYS_COUNT",
@@ -90,6 +91,7 @@ static std::string[][] monitor_counter_list = {
         "VBIF_CORE_STARVE_CYCLES_POWER"
     }
 };
+*/
 
 
 const GLuint GROUP_CP = 0;
