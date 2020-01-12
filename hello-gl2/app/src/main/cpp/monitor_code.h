@@ -53,7 +53,7 @@ public:
 void setupEGL(int w, int h);
 void shutdownEGL();
 void doGLTests();
-void doGLTestAllPerfCounters();
+void doGLTestAllPerfCounters(bool, unsigned int);
 //static void doTriggerMonitorDuringMeasurement();
 //static void doGLStartMonitorForMeasurement(GLuint, GLuint);
 std::tuple<GLuint, GLuint> myGLGetCounterIDFromName(std::string const &);

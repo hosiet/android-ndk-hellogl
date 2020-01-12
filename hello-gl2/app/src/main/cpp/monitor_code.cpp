@@ -157,7 +157,11 @@ void monitor_init() {
 }
 
 void monitor_start() {
-    doGLTestAllPerfCounters();                     //  normal data collection
+    if (false) {
+        doGLTestAllPerfCounters(true, 30);                     //  normal data collection
+    } else {
+        doGLTestAllPerfCounters(true, 30);
+    }
     //doGLTestAllPerfCounterWithDataOrNot();           //  transverse; test whether with data or not
     //doGLStartMonitorForMeasurement(monitor_group_id, monitor_counter_id);
 }
@@ -668,11 +672,15 @@ void doGLTestAllPerfCounterWithDataOrNot() {
  * If we are going to create a monitor and not cancelling it
  * in the future, the buffer must be large enough?
  */
-void doGLTestAllPerfCounters() {
+void doGLTestAllPerfCounters(bool if_spec_total_time, unsigned int max_sec) {
     // TODO FIXME
     //const GLuint monitor_group_id = 0; // for pixel 2, 0: CP
 
-    const unsigned int TEST_TOTAL_MEASURE_SEC = 30;
+    unsigned int TEST_TOTAL_MEASURE_SEC = 30;
+
+    if (if_spec_total_time) {
+        TEST_TOTAL_MEASURE_SEC = max_sec;
+    }
     const unsigned int TEST_ALL_SLEEP_MILLISECONDS = 100;
     auto test_measure_times = \
             (unsigned int) ((TEST_TOTAL_MEASURE_SEC * 1000) / TEST_ALL_SLEEP_MILLISECONDS);
@@ -829,7 +837,7 @@ void doGLTestAllPerfCounters() {
             //item.has_data = true;
 
             LOGE("==!!!== Data collected, bytesWritten is %d", bytesWritten);
-            LOGF("==!!!== Data collected, No.%d\n, TIMESTAMP: %" PRIu64,
+            LOGF("==!!!== Data collected, No.%d, TIMESTAMP: %" PRIu64 "\n",
                     i,
                     std::chrono::duration_cast<std::chrono::milliseconds>(
                             std::chrono::system_clock::now().time_since_epoch()).count());
