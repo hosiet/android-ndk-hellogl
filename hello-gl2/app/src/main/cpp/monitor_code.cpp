@@ -76,6 +76,8 @@ static GLuint counterList[66] = { 0 };
 //GLuint monitor_group_id = 11;
 //GLuint monitor_counter_id = 22;
 
+static const unsigned int TEST_ALL_SLEEP_MILLISECONDS = 100;
+
 
 /*  STATIC list!  ***********************************  */
 
@@ -208,6 +210,182 @@ extern "C" JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_triggerMonit
     monitor_trigger();
 }
 
+void monitor_init_oneshot() { monitor_init(); }
+
+/* Start. Actually will generate the monitor. */
+void monitor_start_oneshot() {
+    for (int j = 0; j < PERF_MONITOR_LENGTH; j++) {
+        monitor_list[j] = GROUP_ID_LIST[j];
+    }
+    glGenPerfMonitorsAMD(
+            (GLsizei) PERF_MONITOR_LENGTH,
+            monitor_list
+            );
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        LOGE("glGenPerfMonitor: We got an OpenGL Error! The value is: %04x!", err);
+    }
+    {
+        // Now, try to enable certain monitor counters.
+        // For Pixel 2, try the following:
+        // groups: 0, 1, 7, 11, 17, 18
+        // group 0
+        glSelectPerfMonitorCountersAMD(
+                monitor_list[0],
+                GL_TRUE, GROUP_ID_LIST[0], 8, counter_list_id_0_0_cp);
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            LOGE("glSelect0: We got an OpenGL Error! The value is: %04x!", err);
+        }
+
+        // group 1
+        glSelectPerfMonitorCountersAMD(
+                monitor_list[1],
+                GL_TRUE, GROUP_ID_LIST[1], 3, counter_list_id_1_1_rbbm);
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            LOGE("glSelect1: We got an OpenGL Error! The value is: %04x!", err);
+        }
+
+        // group 2
+        glSelectPerfMonitorCountersAMD(
+                monitor_list[2],
+                GL_TRUE, GROUP_ID_LIST[2], 1, counter_list_id_2_7_ras);
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            LOGE("glSelect2: We got an OpenGL Error! The value is: %04x!", err);
+        }
+
+        // group 3
+        glSelectPerfMonitorCountersAMD(
+                monitor_list[3],
+                GL_TRUE, GROUP_ID_LIST[3], 1, counter_list_id_3_11_sp);
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            LOGE("glSelect3: We got an OpenGL Error! The value is: %04x!", err);
+        }
+
+        // group 4
+        glSelectPerfMonitorCountersAMD(
+                monitor_list[4],
+                GL_TRUE, GROUP_ID_LIST[4], 1, counter_list_id_5_18_vbif);
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            LOGE("glSelect5: We got an OpenGL Error! The value is: %04x!", err);
+        }
+    }
+}
+
+void monitor_trigger_oneshot() {
+    int tmp_turn = 0;
+    GLsizei bytesWritten = 0;
+    const int PERF_OUTPUT_DATA_BUF_SIZE = 4096;
+    static GLuint output_data[PERF_OUTPUT_DATA_BUF_SIZE] = { 0 }; // TODO: ensure correct
+
+    for (int i = 0; i < PERF_MONITOR_LENGTH; i++) {
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            LOGE("1,We got an OpenGL Error! The value is: %04x!", err);
+        }
+        glBeginPerfMonitorAMD(monitor_list[tmp_turn]);
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            LOGE("2,We got an OpenGL Error! The value is: %04x!", err);
+        }
+        // sleep now
+        std::this_thread::sleep_for(std::chrono::milliseconds(TEST_ALL_SLEEP_MILLISECONDS));
+
+        // end measurement here
+        glEndPerfMonitorAMD(monitor_list[tmp_turn]);
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            LOGE("3.2, %d: We got an OpenGL Error! The value is: %04x!", tmp_turn, err);
+        }
+
+        // get the monitor information
+        glGetPerfMonitorCounterDataAMD(
+                monitor_list[tmp_turn],
+                GL_PERFMON_RESULT_AVAILABLE_AMD,
+                (GLsizei) PERF_OUTPUT_DATA_BUF_SIZE,
+                output_data,
+                &bytesWritten
+        );
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            LOGE("4,We got an OpenGL Error! The value is: %04x!", err);
+            break;
+        }
+        bytesWritten = 0;
+        glGetPerfMonitorCounterDataAMD(
+                monitor_list[tmp_turn],
+                GL_PERFMON_RESULT_SIZE_AMD,
+                (GLsizei) PERF_OUTPUT_DATA_BUF_SIZE,
+                output_data,
+                &bytesWritten
+        );
+        LOGE("Data size collected, bytesWritten: %d\n", bytesWritten);
+        // also output the data size real data
+        if (bytesWritten == 4) {
+            uint64_t real_size = *((uint64_t *) output_data);
+            LOGE("Data size is: %" PRIu64 "!", real_size);
+        }
+        bytesWritten = 0;
+
+        glGetPerfMonitorCounterDataAMD(
+                monitor_list[tmp_turn],
+                GL_PERFMON_RESULT_AMD,
+                (GLsizei) PERF_OUTPUT_DATA_BUF_SIZE, // dataSize
+                output_data,
+                &bytesWritten
+        );
+
+        //LOGE("Data collected, monitor_list is %d, bytesWritten is %d", monitor_list[0], bytesWritten);
+        //int max_nonzero = 0;
+        if (bytesWritten > 0) {
+            // This perf monitor have data output. Send such data to the file.
+            // FIXME: most data is (GLuint groupid, GLuint counterid, uint64_t data),
+            // we should use this way to output!
+            //item.has_data = true;
+
+            LOGE("==!!!== Data collected, bytesWritten is %d", bytesWritten);
+            LOGF("==!!!== Data collected, No.%d, TIMESTAMP: %" PRIu64 "\n",
+                 i,
+                 std::chrono::duration_cast<std::chrono::milliseconds>(
+                         std::chrono::system_clock::now().time_since_epoch()).count());
+
+            //LOGE("The written bytes:\n");
+            // we assume it is of uint64_t
+            int k = 0;
+            while (k < bytesWritten) {
+                LOGF("Data: type: %d, time: %d, group: %d, counter: %d, data: %" PRIu64 "\n",
+                     tmp_turn,
+                     i,
+                     *((uint32_t *) (output_data + k)),
+                     *((uint32_t *) (output_data + k + 1)),
+                     *((uint64_t *) (output_data + k + 2))
+                );
+                k += 4;
+            }
+        }
+        tmp_turn += 1;
+        (void) fflush(fp);
+    }
+
+}
+
+/* Stop measurement.
+ *
+ * This should also be the event handler(?) for SIGINT and other abnormal quit.
+ * Oh well... Event handler may not really hold the OpenGL context. Let's just
+ * use a global variable to set that. TODO Properly end measurement
+ *
+ * Note: disabling GLOBAL_MODE was not included here.
+ * */
+void monitor_stop_oneshot() {
+    glDeletePerfMonitorsAMD(
+            (GLsizei) PERF_MONITOR_LENGTH,
+            monitor_list
+            );
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        LOGE("We got an OpenGL Error! The value is: %04x!", err);
+    }
+    shutdownEGL();
+    _gl_output_close_file(fp);     // close output file
+}
+
+
+
+/** ***************************************************************************************** */
 
 /**
  * Get the full list of performance counter, return a list.
@@ -681,7 +859,6 @@ void doGLTestAllPerfCounters(bool if_spec_total_time, unsigned int max_sec) {
     if (if_spec_total_time) {
         TEST_TOTAL_MEASURE_SEC = max_sec;
     }
-    const unsigned int TEST_ALL_SLEEP_MILLISECONDS = 100;
     auto test_measure_times = \
             (unsigned int) ((TEST_TOTAL_MEASURE_SEC * 1000) / TEST_ALL_SLEEP_MILLISECONDS);
     const int PERF_OUTPUT_DATA_BUF_SIZE = 10240;
