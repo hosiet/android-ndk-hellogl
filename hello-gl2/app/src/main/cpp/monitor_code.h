@@ -60,6 +60,11 @@ std::tuple<GLuint, GLuint> myGLGetCounterIDFromName(std::string const &);
 void doGLTestAllPerfCounterWithDataOrNot();
 std::string myGLGetCounterNameStringFromID(GLuint, GLuint);
 
+void monitor_init_oneshot();
+void monitor_start_oneshot();
+void monitor_trigger_oneshot();
+void monitor_stop_oneshot();
+
 
 /*
 static std::string[][] monitor_counter_list = {
