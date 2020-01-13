@@ -25,6 +25,7 @@
 /* for uint64_t printf support */
 #define __STDC_FORMAT_MACROS
 #include <cinttypes>
+#include <ctime>
 
 
 //#define NO_LOG_FILE
@@ -210,7 +211,14 @@ extern "C" JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_triggerMonit
     monitor_trigger();
 }
 
-void monitor_init_oneshot() { monitor_init(); }
+void monitor_init_oneshot() {
+    monitor_init();
+    /* Also reset the OUTPUT_FILEPATH */
+    std::time_t result = std::time(nullptr);
+    auto t = static_cast<long int>(result);
+    OUTPUT_FILEPATH = std::string("/sdcard/gl_output_") + std::to_string(t) + \
+            std::string(".txt");
+}
 
 /* Start. Actually will generate the monitor. */
 void monitor_start_oneshot() {
