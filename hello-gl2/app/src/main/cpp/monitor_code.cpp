@@ -44,7 +44,7 @@ const char* LOG_TAG = "libgl2jni_monitor";
 #endif
 
 
-std::string OUTPUT_FILEPATH = "/sdcard/gl_output.txt";
+static std::string OUTPUT_FILEPATH = "/sdcard/gl_output.txt";
 static FILE * fp = nullptr;
 
 
@@ -212,12 +212,13 @@ extern "C" JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_triggerMonit
 }
 
 void monitor_init_oneshot() {
-    monitor_init();
-    /* Also reset the OUTPUT_FILEPATH */
+    /* Reset the OUTPUT_FILEPATH to the very beginning */
     std::time_t result = std::time(nullptr);
     auto t = static_cast<long int>(result);
     OUTPUT_FILEPATH = std::string("/sdcard/gl_output_") + std::to_string(t) + \
             std::string(".txt");
+    /* Then initialize the monitor */
+    monitor_init();
 }
 
 /* Start. Actually will generate the monitor. */
