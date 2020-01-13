@@ -270,7 +270,7 @@ void monitor_start_oneshot() {
     }
 }
 
-void monitor_trigger_oneshot() {
+void monitor_trigger_oneshot(int event_type) {
     int tmp_turn = 0;
     GLsizei bytesWritten = 0;
     const int PERF_OUTPUT_DATA_BUF_SIZE = 4096;
@@ -338,8 +338,9 @@ void monitor_trigger_oneshot() {
             //item.has_data = true;
 
             LOGE("==!!!== Data collected, bytesWritten is %d", bytesWritten);
-            LOGF("==!!!== Data collected, No.%d, TIMESTAMP: %" PRIu64 "\n",
+            LOGF("==!!!== Data collected, No.%d, EVENT: %d, TIMESTAMP: %" PRIu64 "\n",
                  i,
+                 event_type,
                  std::chrono::duration_cast<std::chrono::milliseconds>(
                          std::chrono::system_clock::now().time_since_epoch()).count());
 

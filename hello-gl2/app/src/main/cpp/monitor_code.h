@@ -62,7 +62,7 @@ std::string myGLGetCounterNameStringFromID(GLuint, GLuint);
 
 void monitor_init_oneshot();
 void monitor_start_oneshot();
-void monitor_trigger_oneshot();
+void monitor_trigger_oneshot(int event_type);
 void monitor_stop_oneshot();
 
 
