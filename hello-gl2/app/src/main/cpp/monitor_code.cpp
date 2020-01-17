@@ -77,7 +77,7 @@ static GLuint counterList[66] = { 0 };
 //GLuint monitor_group_id = 11;
 //GLuint monitor_counter_id = 22;
 
-static const unsigned int TEST_ALL_SLEEP_MILLISECONDS = 100;
+static const unsigned int TEST_ALL_SLEEP_MILLISECONDS = 10;
 
 
 /*  STATIC list!  ***********************************  */
