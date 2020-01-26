@@ -192,6 +192,7 @@ void monitor_stop() {
     shutdownEGL();
 
     // close output file
+    (void) fflush(fp);
     _gl_output_close_file(fp);
 }
 
@@ -368,9 +369,19 @@ void monitor_trigger_oneshot(int event_type) {
             }
         }
         tmp_turn += 1;
-        (void) fflush(fp);
+        // fflush is ensured elsewhere in stop function
+        //(void) fflush(fp);
     }
 
+}
+
+void monitor_continue_measure_oneshot() {
+    const int MONITOR_ONESHOT_MEASURE_INTERVAL = 10;   /* In ms. Least leave some time here...? */
+    while (true) {
+        monitor_trigger_oneshot(0);     // parameter: event_type. We do not have type here.
+        // sleep now
+        std::this_thread::sleep_for(std::chrono::milliseconds(MONITOR_ONESHOT_MEASURE_INTERVAL));
+    }
 }
 
 /* Stop measurement.
